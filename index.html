@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>메모리 종합 대시보드 v7</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+    background: #f5f5f0;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+  }
+
+  /* 헤더 */
+  .top-header {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: #fff;
+    padding: 16px 18px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2px solid #C73E2C;
+  }
+  .top-title { font-size: 18px; font-weight: 700; }
+  .top-sub { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+  .top-meta {
+    display: flex; gap: 12px; margin-top: 8px;
+    font-size: 10px; opacity: 0.8; flex-wrap: wrap;
+  }
+  .top-meta span { padding: 2px 8px; background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+  /* 탭 네비 */
+  .tabs {
+    display: flex;
+    background: #fff;
+    border-bottom: 0.5px solid #ddd;
+    overflow-x: auto;
+    position: sticky;
+    top: 78px;
+    z-index: 99;
+  }
+  .tab {
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #888;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .tab:hover { color: #1a1a1a; }
+  .tab.active {
+    color: #C73E2C;
+    border-bottom-color: #C73E2C;
+    font-weight: 600;
+  }
+
+  .container { max-width: 760px; margin: 0 auto; padding: 16px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  h2 { font-size: 16px; font-weight: 500; margin: 0 0 6px; }
+  h3 { font-size: 13px; font-weight: 600; margin: 18px 0 4px; color: #444; padding-top: 12px; border-top: 0.5px solid #ddd; }
+  h3:first-of-type { border-top: none; padding-top: 0; }
+  .sub { font-size: 11px; color: #888; margin: 0 0 10px; }
+
+  /* 카드형 핵심 지표 */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .qc {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 0.5px solid #ddd;
+  }
+  .qc-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .qc-val { font-size: 18px; font-weight: 700; margin: 4px 0; }
+  .qc-change { font-size: 11px; }
+  .up { color: #C73E2C; }
+  .down { color: #1D9E75; }
+  .flat { color: #888; }
+
+  /* 헤드라인 카드 */
+  .headline {
+    background: linear-gradient(135deg, #C73E2C, #D85A30);
+    color: #fff;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .hl-label { font-size: 10px; opacity: 0.85; }
+  .hl-title { font-size: 15px; font-weight: 600; margin: 4px 0 6px; }
+  .hl-body { font-size: 12px; line-height: 1.55; opacity: 0.95; }
+
+  /* 표 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 0.5px solid #ddd;
+    margin-top: 8px;
+  }
+  th {
+    padding: 8px 6px;
+    text-align: right;
+    font-weight: 500;
+    color: #555;
+    background: #f5f5f0;
+    font-size: 10px;
+    border-bottom: 0.5px solid #ddd;
+  }
+  th:first-child { text-align: left; padding-left: 10px; }
+  td {
+    padding: 8px 6px;
+    text-align: right;
+    border-bottom: 0.5px solid #f0f0f0;
+    font-variant-numeric: tabular-nums;
+  }
+  td:first-child { text-align: left; padding-left: 10px; font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  .cat-row td {
+    background: #eef1f4; font-weight: 600; color: #2C5578; font-size: 11px;
+    text-align: left;
+  }
+  .total-row { background: #f0ede4; font-weight: 700; }
+  .hl-row { background: #FBE4D6; font-weight: 700; }
+  .hl-row td:first-child { color: #C77B1F; }
+  .sk-col { color: #1D9E75; font-weight: 600; }
+  .ss-col { color: #534AB7; font-weight: 600; }
+  .mu-col { color: #C73E2C; font-weight: 600; }
+  .gap-pos { color: #C73E2C; font-weight: 600; font-size: 11px; }
+  .gap-neg { color: #1D9E75; font-weight: 600; font-size: 11px; }
+  .last-week { color: #888; font-size: 11px; }
+  .this-week { color: #1D9E75; font-weight: 700; }
+  .consensus { color: #4A7AB0; font-weight: 600; }
+  .small-note { font-size: 10px; color: #666; text-align: left; }
+
+  /* 인사이트 박스 */
+  .insight {
+    background: #f0ede4;
+    border-radius: 8px;
+    padding: 11px 13px;
+    font-size: 11.5px;
+    color: #444;
+    line-height: 1.65;
+    margin-top: 10px;
+  }
+  .insight strong { color: #1a1a1a; }
+
+  .alert-up {
+    background: #FBEEE4;
+    border-left: 3px solid #C77B1F;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    color: #6B4A18;
+    margin: 10px 0;
+    line-height: 1.6;
+  }
+  .alert-up strong { color: #4a3210; }
+
+  .alert-down {
+    background: #E4F0EC;
+    border-left: 3px solid #1D9E75;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    color: #18503D;
+    margin: 10px 0;
+    line-height: 1.6;
+  }
+  .alert-down strong { color: #0d3527; }
+
+  .timestamp {
+    font-size: 10px;
+    color: #888;
+    font-style: italic;
+    margin-top: 6px;
+  }
+
+  /* 차트 */
+  .chart-wrap { position: relative; width: 100%; height: 260px; margin-top: 10px; }
+
+  /* 명령어 박스 */
+  .cmd-box {
+    background: #1a1a2e;
+    color: #fff;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+  .cmd-box .cmd { color: #76B655; font-weight: 700; }
+  .cmd-box .desc { color: #aaa; }
+
+  /* 파일 링크 */
+  .file-card {
+    background: #fff;
+    border: 0.5px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+  .file-card strong { color: #2C5578; }
+  .file-card .file-path { font-family: monospace; font-size: 10px; color: #888; }
+
+  /* 아이콘 표시 */
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 600;
+    margin-left: 4px;
+  }
+  .badge-real { background: #E3F1E9; color: #1D7A5E; }
+  .badge-est { background: #FBE4D6; color: #C77B1F; }
+  .badge-new { background: #FFE4E1; color: #C73E2C; }
+  .badge-fin { background: #E8E4F5; color: #534AB7; }
+  .badge-rev { background: #E3F1E9; color: #1D7A5E; }
+
+  .stock-card {
+    background: #fff;
+    border: 0.5px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sc-name { font-weight: 600; font-size: 13px; }
+  .sc-detail { font-size: 11px; color: #666; }
+  .sc-price { font-weight: 700; font-size: 14px; text-align: right; }
+  .sc-per { font-size: 10px; color: #888; text-align: right; }
+
+  .divider-note {
+    background: #1a1a2e; color: #cdd6e0; font-size: 10.5px;
+    border-radius: 6px; padding: 8px 11px; margin: 8px 0 4px; line-height: 1.6;
+  }
+  .divider-note strong { color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="top-header">
+  <div class="top-title">📊 메모리 종합 대시보드 v7</div>
+  <div class="top-sub">SK하이닉스 · 삼성전자 · 마이크론 통합 추적 · 6/26 시총 1위 재역전(삼성) + 마이크론 SCA $100B + 자금조달·LTA 신규 추적</div>
+  <div class="top-meta">
+    <span>📅 마지막 갱신: 2026.06.27</span>
+    <span>📊 주가 기준: 6/26 종가</span>
+    <span>📈 현물가: 트렌드포스 6/26 18:10 GMT+8</span>
+    <span>🔄 다음: 6/29 (월)</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('overview', this)">🎯 한눈에</div>
+  <div class="tab" onclick="showTab('weekly', this)">📅 주간</div>
+  <div class="tab" onclick="showTab('monthly', this)">📆 월간</div>
+  <div class="tab" onclick="showTab('consensus', this)">💼 컨센서스</div>
+  <div class="tab" onclick="showTab('quarterly', this)">📊 분기</div>
+  <div class="tab" onclick="showTab('macro', this)">🌍 매크로</div>
+  <div class="tab" onclick="showTab('ops', this)">⚙️ 운영</div>
+</div>
+
+<div class="container">
+
+<!-- ============ 한눈에 ============ -->
+<div id="overview" class="section active">
+
+  <div class="headline">
+    <div class="hl-label">🚨 이번 주 헤드라인 (6/27) — 변곡점 직후 급반락 & 구조 전환 확인</div>
+    <div class="hl-title">6/26 코스피 -5.81% 서킷브레이커, 삼성 시총 1위 재탈환</div>
+    <div class="hl-body">
+      ① <strong>6/22 SK 사상 첫 시총 1위</strong> → 6/25 마이크론 효과 동반 급등 → <strong>6/26 양사 급락(SK -7.64%, 삼성 -5.30%)으로 삼성 보통주 시총 1위 재탈환</strong> (격차 ~105조)<br>
+      ② <strong>급락 트리거</strong>: 애플의 中 CXMT D램 구매 로비 보도(FT 6/26) + 오픈AI IPO 연기 관측 → 단기 차익실현 + 레버리지 ETF 수급 부메랑<br>
+      ③ 그러나 <strong>구조 전환은 더 강해짐</strong>: 마이크론 SCA 16건 $100B 최소약정 / SK ADR 45.4조 / Alphabet $84.75B 증자 — "메모리=계약형 인프라" 입증
+    </div>
+  </div>
+
+  <h3>🎯 핵심 지표 한눈에</h3>
+  <div class="quick-grid">
+    <div class="qc">
+      <div class="qc-label">Server RDIMM 32GB</div>
+      <div class="qc-val sk-col">$1,275</div>
+      <div class="qc-change up">▲ +2.00% (6/15 모듈가)</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">PC UDIMM 16GB</div>
+      <div class="qc-val ss-col">$209.0</div>
+      <div class="qc-change flat">— 0.00%</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">DDR5 16Gb 현물</div>
+      <div class="qc-val">$46.73</div>
+      <div class="qc-change flat">— 0.00% (6/26)</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">DDR4 16Gb 현물</div>
+      <div class="qc-val">$72.32</div>
+      <div class="qc-change up">▲ +1.02% (레거시 강세)</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">SK하이닉스 (6/26)</div>
+      <div class="qc-val sk-col">2,694,000원</div>
+      <div class="qc-change down">▼ -7.64% · 시총 ~1,921조</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">삼성전자 (6/26)</div>
+      <div class="qc-val ss-col">339,500원</div>
+      <div class="qc-change down">▼ -5.30% · 시총 ~2,026조 ⭐ 1위</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">마이크론 (6/26)</div>
+      <div class="qc-val mu-col">$1,129</div>
+      <div class="qc-change down">▼ 6/25 ATH $1,255 후 조정 · 시총 $1.27조</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">Micron SCA 약정</div>
+      <div class="qc-val mu-col">$100B</div>
+      <div class="qc-change up">16건 · 예치금 $22B</div>
+    </div>
+  </div>
+
+  <h3>📈 이번 주 시그널 TOP 3</h3>
+
+  <div class="insight">
+    <strong>① 시총 1위 3거래일 연속 뒤집힘 → 변동성 국면 ⭐⭐⭐</strong><br>
+    6/22 SK 사상 첫 시총 1위(장중 2,091조 vs 삼성 2,087조, 종가 291.9만원) → 6/25 마이크론 어닝쇼크에 동반 급등(SK +9.92% 291.7만원) → <strong>6/26 양사 급락으로 삼성 보통주 시총 1위 재탈환</strong>. 6/26 종가 기준 삼성 ~2,026조 vs SK ~1,921조(격차 ~105조). 우선주 포함 시 삼성 우위는 더 큼. 추세는 메모리 사이클 본격화, 단 단기 쏠림·레버리지 수급으로 변동성 확대.<br><br>
+
+    <strong>② 6/26 코스피 -5.81% 급락 + 서킷브레이커 ⭐⭐</strong><br>
+    코스피 8,411.21로 519p(-5.81%) 급락, 장중 서킷브레이커 발동. 시총 상위 50종목 전 종목 하락. 트리거: 애플의 中 CXMT D램 구매 트럼프 행정부 로비 보도(FT 6/26) → 메모리 수요 둔화 우려 + 오픈AI IPO 연기 관측 + 직전 2거래일 급등 차익실현. <strong>가격·계약 펀더멘털 훼손은 아님</strong>(트렌드포스 현물가 6/26 보합~상승 지속).<br><br>
+
+    <strong>③ "메모리=계약형 인프라" 구조 전환 동시 입증 ⭐⭐</strong><br>
+    마이크론 SCA 16건·$100B 최소약정·$22B 예치금 / SK하이닉스 7/10 ADR 45.4조 / Alphabet $84.75B 사상최대 증자(Berkshire $10B) — 같은 주에 수요(LTA)·공급(증설 자금)·구조(off-B/S) 신호가 한꺼번에 확인. 노무라·모건스탠리 슈퍼사이클 지속 견해 유지.
+  </div>
+
+  <h3>📋 운영 중인 추적 양식</h3>
+  <table>
+    <thead>
+      <tr><th>주기</th><th>항목</th><th>다음 갱신</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>매주 월요일</td><td>6종 가격 + 양사·마이크론 주가</td><td>6/29</td></tr>
+      <tr><td>매월 첫째 주</td><td>옴디아 점유율 + LTA 뉴스 + 수출통계</td><td>7/6</td></tr>
+      <tr><td>매월 첫째 주</td><td>26/27 영업이익 컨센서스</td><td>7/6</td></tr>
+      <tr><td>매분기 (실적 후)</td><td>양사 실적 + HBM 분해 + ODM 4사</td><td>7월말</td></tr>
+      <tr class="hl-row"><td>상시 (신규)</td><td>자금조달(⑨) + LTA/수주(⑪) 추적</td><td>이벤트시</td></tr>
+    </tbody>
+  </table>
+
+</div>
+
+<!-- ============ 주간 ============ -->
+<div id="weekly" class="section">
+
+  <h2>📅 주간 업데이트 (6/29 기준 준비)</h2>
+  <p class="sub">매주 월요일 갱신 · 트렌드포스 현물가 6/26 18:10 GMT+8 / 모듈가 6/15 / 계약가 5월(5/29 발표)</p>
+
+  <h3>6종 가격 4열 비교</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>제품</th>
+        <th>전주 6/22</th>
+        <th>금주 6/26~</th>
+        <th>컨센서스</th>
+        <th>괴리율</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="cat-row"><td colspan="5">DRAM</td></tr>
+      <tr class="hl-row">
+        <td>Server RDIMM 32GB <span class="badge badge-real">✓실</span></td>
+        <td class="last-week">$1,250</td>
+        <td class="this-week">$1,275</td>
+        <td class="consensus">$1,047</td>
+        <td class="gap-pos">+21.8%</td>
+      </tr>
+      <tr>
+        <td>PC UDIMM 16GB <span class="badge badge-real">✓실</span></td>
+        <td class="last-week">$209.0</td>
+        <td class="this-week">$209.0</td>
+        <td class="consensus">$163</td>
+        <td class="gap-pos">+28.2%</td>
+      </tr>
+      <tr>
+        <td>Mobile 8GB <span class="badge badge-est">●추정</span></td>
+        <td class="last-week">$76.6</td>
+        <td class="this-week">$76.6</td>
+        <td class="consensus">$78</td>
+        <td class="gap-neg">-1.8%</td>
+      </tr>
+      <tr class="cat-row"><td colspan="5">NAND</td></tr>
+      <tr>
+        <td>MLC 256Gb <span class="badge badge-real">✓실</span></td>
+        <td class="last-week">$34.67</td>
+        <td class="this-week">$34.67</td>
+        <td class="consensus">$36.5</td>
+        <td class="gap-neg">-5.0%</td>
+      </tr>
+      <tr>
+        <td>TLC 256Gb <span class="badge badge-real">✓실</span></td>
+        <td class="last-week">$11.10</td>
+        <td class="this-week">$11.10</td>
+        <td class="consensus">$15.9</td>
+        <td class="gap-neg">-30.2%</td>
+      </tr>
+      <tr>
+        <td>QLC 1Tb <span class="badge badge-est">●추정</span></td>
+        <td class="last-week">$28.05</td>
+        <td class="this-week">$28.05</td>
+        <td class="consensus">$34.9</td>
+        <td class="gap-neg">-19.6%</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="timestamp">⚠️ NAND 계약가는 6월 ASP 발표 대기 중(보합 표기). DRAM 계약가도 5월(5/29 발표)이 최신 — 2Q26 계약가는 전분기 대비 +58~63% QoQ(트렌드포스), NAND +70~75% QoQ. ⭐ RDIMM 32GB 모듈가 $1,250→$1,275(+2.00%) 지속 상승.</p>
+
+  <h3>현물가 6/26 최신 (트렌드포스 직접 조회, GMT+8 18:10)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>제품</th>
+        <th>전주 6/18</th>
+        <th>금주 6/26</th>
+        <th>주간 변동</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>DDR5 16Gb (2Gx8) 4800/5600</td>
+        <td class="last-week">$46.00</td>
+        <td class="this-week">$46.73</td>
+        <td class="gap-pos">▲ 1.59% (당일 0.00%)</td>
+      </tr>
+      <tr>
+        <td>DDR4 16Gb (2Gx8) 3200</td>
+        <td class="last-week">$69.13</td>
+        <td class="this-week">$72.32</td>
+        <td class="gap-pos">▲ 4.61% (당일 +1.02%)</td>
+      </tr>
+      <tr>
+        <td>DDR4 8Gb (1Gx8) 3200</td>
+        <td class="last-week">$35.90</td>
+        <td class="this-week">$36.00</td>
+        <td class="gap-pos">▲ 0.28% (당일 0.00%)</td>
+      </tr>
+      <tr>
+        <td>DDR3 4Gb 512Mx8 1600/1866</td>
+        <td class="last-week">$10.98</td>
+        <td class="this-week">$11.57</td>
+        <td class="gap-pos">▲ 5.37% (당일 +0.62%)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="timestamp">전 품목 ▲ 상승 지속. DDR4 16Gb +4.61%, DDR3 +5.37% 레거시 강세 두드러짐. DDR5 16Gb는 보합권. 6/26 증시 급락에도 <strong>현물가는 훼손 없음</strong> — 단기 수급보다 구조적 공급 부족이 우위.</p>
+
+  <div class="chart-wrap"><canvas id="spotChart"></canvas></div>
+
+  <h3>양사 + 마이크론 주가 현황 (6/26 종가)</h3>
+  <div class="stock-card">
+    <div>
+      <div class="sc-name">SK하이닉스 (6/26 종가)</div>
+      <div class="sc-detail">▼ -7.64% (-223,000) · 시총 ~1,921조 · 6/22 사상 첫 시총 1위(장중 294.5만)</div>
+    </div>
+    <div>
+      <div class="sc-price sk-col">2,694,000원</div>
+      <div class="sc-per">목표가 최고 430만(한화)·420만(미래에셋)</div>
+    </div>
+  </div>
+  <div class="stock-card">
+    <div>
+      <div class="sc-name">삼성전자 (6/26 종가)</div>
+      <div class="sc-detail">▼ -5.30% (-19,000) · 시총 ~2,026조 · 보통주 시총 1위 재탈환</div>
+    </div>
+    <div>
+      <div class="sc-price ss-col">339,500원</div>
+      <div class="sc-per">목표가 평균 ~44만(최고 85만 노무라)</div>
+    </div>
+  </div>
+  <div class="stock-card">
+    <div>
+      <div class="sc-name">마이크론 (6/26 종가)</div>
+      <div class="sc-detail">6/25 ATH $1,255 후 조정 · 시총 ~$1.27조 · SCA $100B</div>
+    </div>
+    <div>
+      <div class="sc-price mu-col">$1,129</div>
+      <div class="sc-per">목표가 상향 러시(바클레이즈 +70%)</div>
+    </div>
+  </div>
+
+  <h3>다음 주 (6/29) 관전 포인트</h3>
+  <div class="alert-up">
+    <strong>1. 6/26 급락 후 반등 강도</strong> — 펀더멘털(가격·계약)과 수급(레버리지·차익실현) 괴리 해소 여부<br>
+    <strong>2.</strong> 6월 전체 수출 발표 (7/1) — 6/1~20 $255억(+188.4%) 기준 $900억 돌파 시 사상 최대<br>
+    <strong>3.</strong> 애플-CXMT 로비 보도 후속 — 中 레거시 D램 공급 확대 리스크 점검<br>
+    <strong>4.</strong> SK하이닉스 7/10 ADR 상장 수요예측 결과 → 최종 조달액·프리미엄<br>
+    <strong>5.</strong> RDIMM 32GB $1,275 → 추가 가속 vs 조정 / DDR4·DDR3 레거시 강세 지속성<br>
+    <strong>6.</strong> 삼성 2Q26(7/23)·SK 2Q26(7/29) 실적 프리뷰 — 컨센 상향 반영
+  </div>
+
+</div>
+
+<!-- ============ 월간 ============ -->
+<div id="monthly" class="section">
+
+  <h2>📆 월간 업데이트 (6월)</h2>
+  <p class="sub">매월 첫째 주 월요일 갱신 · 옴디아·LTA·수출통계 · 6월 전체 수출은 7/1 발표 예정</p>
+
+  <h3>한국 반도체 수출 추이</h3>
+  <table>
+    <thead>
+      <tr><th>월</th><th>수출액</th><th>YoY</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1월</td><td>$124.5억</td><td class="up">+102.7%</td></tr>
+      <tr><td>2월</td><td>$232.5억</td><td class="up">+160.6%</td></tr>
+      <tr><td>3월</td><td>$328.3억</td><td class="up">+151.4%</td></tr>
+      <tr><td>4월</td><td>$319.0억</td><td class="up">+173.5%</td></tr>
+      <tr><td>5월</td><td>$371.6억</td><td class="up">+169.4%</td></tr>
+      <tr><td>6/1~10</td><td>$111억</td><td class="up">+205.8%</td></tr>
+      <tr class="hl-row"><td>6/1~20</td><td>$255억</td><td class="up">+188.4% ⭐ 역대 최대</td></tr>
+      <tr class="total-row"><td>6월 전체 (전망)</td><td>$900억+ 돌파 유력</td><td class="up">7/1 발표 대기</td></tr>
+    </tbody>
+  </table>
+  <p class="timestamp">⭐ 6/1~20 일평균 $41.3억 유지 시 6월 전체 사상 첫 $900억 돌파. 6/1~20 전체 수출(반도체 포함)은 $620억(+60.4%). 7/1 산자부 6월 확정치 발표 즉시 갱신.</p>
+
+  <div class="chart-wrap"><canvas id="exportChart"></canvas></div>
+
+  <h3>옴디아 점유율 (HBM/DRAM/NAND)</h3>
+  <table>
+    <thead>
+      <tr><th>회사</th><th>HBM</th><th>DRAM 전체</th><th>NAND</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SK하이닉스</td><td class="sk-col">58~62%</td><td class="sk-col">36%</td><td>22%</td></tr>
+      <tr><td>삼성전자</td><td class="ss-col">17→28% (HBM4)</td><td class="ss-col">34%</td><td>33%</td></tr>
+      <tr><td>마이크론</td><td class="mu-col">21%</td><td>25%</td><td>12%</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6월 주요 뉴스</h3>
+  <div class="insight">
+    ✅ <strong>6/24 마이크론 SCA 16건</strong>: 5년 take-or-pay, 14건 $100B 최소약정, $22B 예치금 → "메모리 사이클 종말" 논의<br>
+    ✅ <strong>6/24 SK하이닉스 ADR 결의</strong>: 7/10 나스닥, 1,779만주, 45.4조 (시설투자 전액)<br>
+    ✅ <strong>6/22 SK 사상 첫 시총 1위</strong>: 25년 7개월 만의 코스피 지각변동<br>
+    ✅ <strong>송명섭(iM증권)</strong>: 2026 D램 수요증가율 26.2%→28.0% 상향, 업황 호조 내년까지<br>
+    ⚠️ <strong>6/26 애플-CXMT 로비 보도(FT)</strong>: 中 레거시 D램 공급 확대 시도 → 단기 수요 둔화 우려<br>
+    ⚠️ <strong>6/26 코스피 -5.81% 급락</strong>: 레버리지 ETF 수급·쏠림 부작용 노출
+  </div>
+
+</div>
+
+<!-- ============ 컨센서스 ============ -->
+<div id="consensus" class="section">
+
+  <h2>💼 영업이익 컨센서스 (2026·2027)</h2>
+  <p class="sub">매월 첫째 주 갱신 · 4사 평균 + 최고/최저 · 마이크론 어닝 후 상향 진행 중</p>
+
+  <div class="quick-grid">
+    <div class="qc">
+      <div class="qc-label">SK 2026</div>
+      <div class="qc-val sk-col">~263조</div>
+      <div class="qc-change up">247→263조 상향</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">SK 2027</div>
+      <div class="qc-val sk-col">~338조</div>
+      <div class="qc-change up">240~459조 편차</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">삼성 2026</div>
+      <div class="qc-val ss-col">~361조</div>
+      <div class="qc-change up">332→361조 상향</div>
+    </div>
+    <div class="qc">
+      <div class="qc-label">삼성 2027</div>
+      <div class="qc-val ss-col">~431조</div>
+      <div class="qc-change up">327~529조 편차</div>
+    </div>
+  </div>
+
+  <h3>SK하이닉스 4사 분포</h3>
+  <table>
+    <thead>
+      <tr><th>증권사</th><th>2026</th><th>2027</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>유진투자 (최고)</td><td>—</td><td class="sk-col">459.5조</td></tr>
+      <tr><td>맥쿼리</td><td>—</td><td>447조</td></tr>
+      <tr><td>미래에셋</td><td>299조</td><td>449조</td></tr>
+      <tr><td>노무라</td><td>280조</td><td>378조</td></tr>
+      <tr class="total-row"><td>컨센서스 평균</td><td>~263조</td><td>~338조</td></tr>
+      <tr><td>iM증권</td><td>—</td><td>245조</td></tr>
+      <tr><td>BNK (최저)</td><td>—</td><td>240조</td></tr>
+    </tbody>
+  </table>
+  <p class="timestamp">미래에셋: SK 2027 HBM 가격상승률 25.3%→43.7% 반영해 영업이익 449조 상향, 목표가 420만원. 마이크론 어닝 후 2Q26 영업이익 전망 64조(~$41.3B)로 상향.</p>
+
+  <h3>삼성전자 4사 분포</h3>
+  <table>
+    <thead>
+      <tr><th>증권사</th><th>2026</th><th>2027</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>유진투자 (최고)</td><td>—</td><td class="ss-col">529조</td></tr>
+      <tr><td>미래에셋</td><td>395조</td><td>529조</td></tr>
+      <tr><td>SK증권</td><td>361조</td><td>494조</td></tr>
+      <tr><td>KB증권</td><td>327조</td><td>488조</td></tr>
+      <tr class="total-row"><td>컨센서스 평균</td><td>~361조</td><td>~431조</td></tr>
+    </tbody>
+  </table>
+  <p class="timestamp">미래에셋: 삼성 2026·2027 영업이익 395조·529조 대폭 상향(NAND·범용 D램 강세 반영). 마이크론 어닝 후 2Q26 영업이익 87조(~$56.2B) 전망.</p>
+
+  <h3>3개월 컨센서스 추이</h3>
+  <div class="chart-wrap"><canvas id="consensusChart"></canvas></div>
+
+  <div class="alert-up">
+    <strong>핵심 패턴: 상향 속도 가속</strong><br>
+    2026.02 합산 339조 → 2026.05 합산 579조(+73%) → 6월 마이크론 SCA·ADR 모멘텀에 추가 상향. 7월 컨센이 SK 2026 270조+, 삼성 370조+ 가능. 단, ROE 격차(SK 64.5% vs 삼성 42.1%)가 밸류에이션 프리미엄 정당화의 핵심.
+  </div>
+
+</div>
+
+<!-- ============ 분기 ============ -->
+<div id="quarterly" class="section">
+
+  <h2>📊 분기 종합 (1Q26 마지막 갱신)</h2>
+  <p class="sub">매분기 실적 발표 후 갱신 (다음: 삼성 7/23, SK 7/29)</p>
+
+  <h3>양사 1Q26 실적 (확정)</h3>
+  <table>
+    <thead>
+      <tr><th>항목</th><th>SK하이닉스</th><th>삼성 DS</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>매출</td><td class="sk-col">52.6조</td><td class="ss-col">81.7조</td></tr>
+      <tr><td>영업이익</td><td class="sk-col">37.6조</td><td class="ss-col">53.7조</td></tr>
+      <tr><td>영업이익률</td><td><strong>72%</strong></td><td><strong>66%</strong></td></tr>
+      <tr><td>YoY 영업이익</td><td class="up">+405.5%</td><td class="up">+693%</td></tr>
+      <tr><td>HBM 매출 (추정)</td><td>~18조</td><td>~6~7조</td></tr>
+      <tr><td>HBM 비중</td><td>34%</td><td>8~10%</td></tr>
+    </tbody>
+  </table>
+
+  <h3>마이크론 fiscal Q3 2026 (6/24 발표)</h3>
+  <table>
+    <thead>
+      <tr><th>항목</th><th>실적</th><th>컨센서스</th><th>초과</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>매출</td><td class="mu-col">$41.46B</td><td>$35.59B</td><td class="up">+16.5%</td></tr>
+      <tr><td>EPS (adj)</td><td class="mu-col">$25.11</td><td>$20.49</td><td class="up">+22.5%</td></tr>
+      <tr><td>Gross Margin</td><td><strong>84.9%</strong></td><td>81%</td><td class="up">+3.9%p</td></tr>
+      <tr><td>YoY 매출</td><td class="up">+346%</td><td>—</td><td>—</td></tr>
+      <tr><td>QoQ 매출</td><td class="up">+74%</td><td>—</td><td>—</td></tr>
+      <tr class="hl-row"><td>Q4 가이던스</td><td class="mu-col">$50B ± $1B</td><td>$42.9B</td><td class="up">+16.5%</td></tr>
+      <tr><td>FY26 capex</td><td>~$27B</td><td>—</td><td>—</td></tr>
+      <tr><td>FY27 capex</td><td><strong>$40B+ (mid-$40B)</strong></td><td>—</td><td class="up">대폭 상향</td></tr>
+      <tr class="hl-row"><td>SCA 16건 (14건 RPO)</td><td><strong>$100B+ 최소약정</strong></td><td>—</td><td>예치금 $22B</td></tr>
+    </tbody>
+  </table>
+  <p class="timestamp">⭐ CEO Sanjay Mehrotra "AI가 메모리 산업을 구조적으로 바꿨다". SCA 16건 = DRAM 물량 20% + NAND 1/3. 4 대형 + 3 중형 고객. 5년 만기(자동차 3년), 2026~2030.</p>
+
+  <h3>HBM 시장 점유율 (HBM3E→HBM4 전환)</h3>
+  <table>
+    <thead>
+      <tr><th>세대</th><th>SK</th><th>마이크론</th><th>삼성</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>HBM3 (24년)</td><td class="sk-col">90%+</td><td>0</td><td>0</td></tr>
+      <tr><td>HBM3E (25년)</td><td class="sk-col">62%</td><td>21%</td><td>17%</td></tr>
+      <tr><td>HBM3E (26.1Q)</td><td class="sk-col">58%</td><td>25%</td><td>17%</td></tr>
+      <tr class="hl-row"><td>HBM4 (26년)</td><td class="sk-col">54~55%</td><td>17~18%</td><td class="ss-col">28~29%</td></tr>
+    </tbody>
+  </table>
+
+  <h3>ODM 4사 (분기 추적)</h3>
+  <table>
+    <thead>
+      <tr><th>회사</th><th>분기매출</th><th>AI서버</th><th>백로그</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Dell</td><td>$33.4B</td><td>$16.1B</td><td>$43B</td></tr>
+      <tr><td>Supermicro</td><td>$11.7B</td><td>~$10B</td><td>N/A</td></tr>
+      <tr><td>HPE</td><td>$3.9B</td><td>~$1B</td><td>N/A</td></tr>
+      <tr><td>Lenovo</td><td>$5.1B</td><td>~$2B</td><td>N/A</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2Q26 실적 추정 (마이크론 어닝 후 상향)</h3>
+  <table>
+    <thead>
+      <tr><th>회사</th><th>2Q26 영업이익 추정</th><th>vs 1Q</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SK하이닉스</td><td class="sk-col">~64조 (~$41.3B)</td><td class="up">상향</td></tr>
+      <tr><td>삼성 (전사)</td><td class="ss-col">~87조 (~$56.2B)</td><td class="up">상향</td></tr>
+    </tbody>
+  </table>
+  <p class="timestamp">⚠️ 추정치 — 7/23(삼성)·7/29(SK) 실적 발표로 확정 예정. 하반기 100조 돌파, 4Q 100조 육박 전망(이투데이).</p>
+
+</div>
+
+<!-- ============ 매크로 ============ -->
+<div id="macro" class="section">
+
+  <h2>🌍 매크로 환경</h2>
+  <p class="sub">빅테크 캐펙스·부채·FCF + 자금조달(⑨ 신규)·LTA수주(⑪ 신규) 통합 추적</p>
+
+  <h3>① 빅5 캐펙스 가이던스 (26·27·28)</h3>
+  <table>
+    <thead>
+      <tr><th>회사</th><th>2024</th><th>2025</th><th>2026</th><th>2027(E)</th><th>2028(E)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Amazon</td><td>$83B</td><td>$131B</td><td>$200B</td><td>$230B</td><td>$255B</td></tr>
+      <tr><td>Google</td><td>$53B</td><td>$91B</td><td>$185B</td><td>$235B</td><td>$265B</td></tr>
+      <tr><td>Microsoft</td><td>$56B</td><td>$83B</td><td>$135B</td><td>$170B</td><td>$190B</td></tr>
+      <tr><td>Meta</td><td>$39B</td><td>$71B</td><td>$135B</td><td>$185B</td><td>$215B</td></tr>
+      <tr><td>Oracle</td><td>$7B</td><td>$21B</td><td>$50B</td><td>$95B</td><td>$110B</td></tr>
+      <tr class="total-row"><td>합계</td><td>$238B</td><td>$397B</td><td>$705B</td><td>$915B</td><td>$1,035B</td></tr>
+    </tbody>
+  </table>
+  <p class="timestamp">출처: 각사 1Q26 가이던스 · Alphabet 2026 capex $180~190B로 상향 · Oracle FY27 capex $95B 전망</p>
+
+  <h3>② 실 capex 투자액 (가이던스 vs 실집행)</h3>
+  <table>
+    <thead>
+      <tr><th>회사</th><th>2025 초기가이드</th><th>2025 실집행</th><th>초과율</th><th>1Q26 실집행</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Amazon</td><td>$100B</td><td>$131B</td><td class="up">+31%</td><td>$44.2B (분기)</td></tr>
+      <tr><td>Microsoft</td><td>$80B</td><td>$140B (9M)</td><td class="up">+75%</td><td>$29.9B (분기)</td></tr>
+      <tr><td>Google</td><td>$75B</td><td>$91B</td><td class="up">+21%</td><td>$30.2B (분기)</td></tr>
+      <tr><td>Meta</td><td>$60~65B</td><td>$71B</td><td class="up">+13%</td><td>$19.8B (분기)</td></tr>
+      <tr><td>Oracle</td><td>$15B</td><td>$21B</td><td class="up">+40%</td><td>~$13B (분기)</td></tr>
+      <tr class="total-row"><td>합계</td><td>$335B</td><td>$454B</td><td class="up">+36%</td><td>$137B (1Q)</td></tr>
+    </tbody>
+  </table>
+  <div class="alert-up">
+    <strong>🔍 핵심 패턴: 가이던스가 분기마다 상향됨</strong><br>
+    2025년 초 합산 $335B → 실집행 $454B로 +36% 초과. 2026 가이던스 $705B는 보수적 가능성 → 실집행 $850B~1조 가능
+  </div>
+
+  <h3>③ 회사별 부채비율 (D/E Ratio)</h3>
+  <table>
+    <thead>
+      <tr><th>회사</th><th>2023</th><th>2024</th><th>2025</th><th>2026.1Q</th><th>변화</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Apple</td><td>2.45</td><td>1.80</td><td>1.50</td><td>1.40</td><td class="down">개선</td></tr>
+      <tr><td>Microsoft</td><td>0.39</td><td>0.34</td><td>0.32</td><td>0.30</td><td class="down">개선</td></tr>
+      <tr><td>Google</td><td>0.11</td><td>0.10</td><td>0.10</td><td>0.12</td><td class="up">소폭증가</td></tr>
+      <tr><td>Meta</td><td>0.18</td><td>0.30</td><td>0.39</td><td>0.50</td><td class="up">증가</td></tr>
+      <tr><td>Amazon</td><td>1.62</td><td>1.19</td><td>1.04</td><td>1.10</td><td class="flat">횡보</td></tr>
+      <tr class="hl-row"><td>Oracle</td><td>3.80</td><td>4.20</td><td>4.50</td><td>~5.00</td><td class="up">악화 ⚠️</td></tr>
+    </tbody>
+  </table>
+  <p class="timestamp">Macrotrends · Oracle D/E ~500%로 클라우드 피어 압도(자기자본 $20B vs MS·구글 $340B+)</p>
+
+  <h3>④ 채권 발행 추이 (AI 인프라 자금 조달)</h3>
+  <table>
+    <thead>
+      <tr><th>회사</th><th>2025 채권발행</th><th>2026 추가 (예상)</th><th>특이사항</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Microsoft</td><td>$35B (분기)</td><td>~$50B</td><td class="small-note">분기 최대 발행</td></tr>
+      <tr><td>Alphabet</td><td>$25B</td><td>$30B+</td><td class="small-note">100년 만기 century bond</td></tr>
+      <tr><td>Meta</td><td>$30B</td><td>$35B</td><td class="small-note">2025.10 데이터센터용</td></tr>
+      <tr class="hl-row"><td>Oracle</td><td>$18B (가을)</td><td>$45~50B</td><td class="small-note">2026 단일 IG bond + ATM</td></tr>
+      <tr><td>Amazon</td><td>$12B</td><td>$15~20B</td><td class="small-note">SEC 자금조달 명시</td></tr>
+      <tr class="total-row"><td>합계 (2025)</td><td>~$200B</td><td>~$400B</td><td class="small-note">2030 누적 $1.5조 전망</td></tr>
+    </tbody>
+  </table>
+
+  <h3>⑤ 현금 보유 vs FCF (1Q26)</h3>
+  <table>
+    <thead>
+      <tr><th>회사</th><th>현금+단기투자</th><th>FCF (TTM)</th><th>전년 대비</th><th>커버리지</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Microsoft</td><td>$78B</td><td>~$70B</td><td class="down">-5%</td><td><strong style="color:#1D9E75;">106% ✓</strong></td></tr>
+      <tr><td>Google</td><td>$98B</td><td>~$60B</td><td class="down">-18%</td><td>89%</td></tr>
+      <tr><td>Apple</td><td>$156B</td><td>$90.8B</td><td class="down">-9%</td><td>비참여</td></tr>
+      <tr><td>Meta</td><td>$29B</td><td>~$45B</td><td class="down">-17%</td><td>68%</td></tr>
+      <tr class="hl-row"><td>Amazon</td><td>$87B</td><td class="up"><strong>$1.2B</strong></td><td class="up"><strong>-95% ⚠️</strong></td><td>58%</td></tr>
+      <tr class="hl-row"><td>Oracle</td><td>$11B</td><td>~-$13B</td><td class="up">마이너스</td><td>40%</td></tr>
+    </tbody>
+  </table>
+
+  <h3>⑥ 캐펙스 관련 주요 변동 뉴스 (시기순)</h3>
+
+  <div class="alert-up">
+    <strong>📰 2026.06.26 | 애플, 中 CXMT D램 구매 트럼프 행정부 로비 (FT 단독)</strong><br>
+    "애플이 중국 D램 1위 CXMT(창신메모리)로부터 메모리 구매를 위해 미 행정부 상대 로비" → 메모리 수요 둔화 우려로 한국 양사 급락 트리거<br>
+    <span style="font-size:10px;color:#888;">출처: Financial Times</span>
+  </div>
+
+  <div class="alert-up">
+    <strong>📰 2026.04.30 | 1Q26 실적 후 캐펙스 가이던스 일제 상향</strong><br>
+    "Microsoft·Google·Amazon·Meta 합산 2026 캐펙스 분석가 예상 $635B 대비 +14% 상회"<br>
+    <span style="font-size:10px;color:#888;">출처: FT · Yahoo Finance</span>
+  </div>
+
+  <div class="alert-up">
+    <strong>📰 2026.04.30 | Microsoft CFO Amy Hood</strong><br>
+    "메모리·반도체 가격 상승으로 캐펙스 $25B 추가. 2026년 말까지 공급 부족 지속"<br>
+    <span style="font-size:10px;color:#888;">출처: Microsoft 컨퍼런스콜</span>
+  </div>
+
+  <div class="alert-up">
+    <strong>📰 2026.04.30 | Amazon FCF -95% 폭락</strong><br>
+    "TTM FCF $25.9B → $1.2B. 1Q26 분기 캐펙스 $44.2B (+77% YoY). MS·BofA: 2026 FCF 마이너스 전망"<br>
+    <span style="font-size:10px;color:#888;">출처: CNBC · Morgan Stanley</span>
+  </div>
+
+  <div class="alert-up">
+    <strong>📰 2026.05 | Oracle CDS 폭등 + BBB/Baa2 부정적 전망</strong><br>
+    "FY26 capex ~$50B(2배), CDS 9월 이후 3배. 데이터센터 파트너 부채 $72B+(미시간 $16.3B·텍사스/위스콘신 $38B·뉴멕시코 $18B)"<br>
+    <span style="font-size:10px;color:#888;">출처: The Next Web · S&P · Moody's</span>
+  </div>
+
+  <h3>⑦ 사이클 비교 (1차~4차)</h3>
+  <table>
+    <thead>
+      <tr><th>사이클</th><th>시기</th><th>정점 시총</th><th>fwd PER</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1차 (PC)</td><td>2015</td><td>40조</td><td>6.5배</td></tr>
+      <tr><td>2차 (서버)</td><td>2018</td><td>69조</td><td>4.7배</td></tr>
+      <tr><td>3차 (코로나)</td><td>2021</td><td>108조</td><td>12.7배</td></tr>
+      <tr class="hl-row"><td>4차 (AI)</td><td>2026</td><td>SK 2,091조 / 삼성 2,090조 (6/22 장중)</td><td>SK fwd 6.8배 / MU 11배</td></tr>
+    </tbody>
+  </table>
+
+  <h3>⑧ 매크로 종합 시그널</h3>
+  <div class="insight">
+    <strong>🟢 강세 시그널</strong><br>
+    ① 가이던스 6분기 연속 상향(실집행 +36% 초과) ② 마이크론 SCA $100B로 "계약형 인프라" 입증<br>
+    ③ Alphabet $84.75B 증자에 시장 수요 폭발(Berkshire $10B) ④ 트렌드포스 현물가 6/26에도 상승 지속<br><br>
+    <strong>🔴 약세 시그널</strong><br>
+    ① Amazon FCF -95% / Oracle CDS 3배·FCF -$13B ② 애플-CXMT 中 레거시 공급 확대 시도<br>
+    ③ 6/26 코스피 -5.81% 급락 — 레버리지·쏠림 수급 취약성 노출<br><br>
+    <strong>⚪ 중립 시그널</strong><br>
+    ① off-B/S SPV($120B+) 구조 리스크 이연 ② 2027 가이던스(2027.01)까지 변동성 큼
+  </div>
+
+  <!-- ===== ⑨ 자금조달 (신규) ===== -->
+  <h3>⑨ 자금조달 — 자본조달만 (LTA 제외) <span class="badge badge-new">신규</span></h3>
+  <div class="divider-note">
+    <strong>📍 정의:</strong> 채권·증자·SPV 등 <strong>재무상태표(B/S)상 자본조달</strong>만 추적. 매출 계약인 LTA/SCA는 ⑪에서 별도 추적 — <strong>절대 혼동 금지</strong>.
+  </div>
+  <table>
+    <thead>
+      <tr><th>주체</th><th>방식</th><th>규모</th><th>시기/비고</th></tr>
+    </thead>
+    <tbody>
+      <tr class="cat-row"><td colspan="4">한국 양사</td></tr>
+      <tr class="hl-row">
+        <td>SK하이닉스 <span class="badge badge-fin">증자</span></td>
+        <td>ADR 신주 (제3자배정 유상증자)</td>
+        <td class="sk-col">45.4조 (1,779만주)</td>
+        <td class="small-note">7/10 나스닥 상장 · 용인 클러스터1·청주 P&T7 시설투자 전액 · 최종액 수요예측 확정</td>
+      </tr>
+      <tr>
+        <td>삼성전자 <span class="badge badge-rev">자체현금</span></td>
+        <td>외부 자금조달 없음</td>
+        <td>—</td>
+        <td class="small-note">FCF 50% 환원 정책 유지 · 순현금 구조로 캐펙스 자체 충당</td>
+      </tr>
+      <tr class="cat-row"><td colspan="4">미국 메모리</td></tr>
+      <tr>
+        <td>마이크론 <span class="badge badge-rev">자체현금</span></td>
+        <td>SCA 예치금 활용(차입 최소화)</td>
+        <td class="mu-col">$22B 예치금</td>
+        <td class="small-note">SCA 선수금($18B 현금)으로 증설 자본위험 경감 → 잉여FCF 100% 환원</td>
+      </tr>
+      <tr class="cat-row"><td colspan="4">빅테크 5사</td></tr>
+      <tr class="hl-row">
+        <td>Alphabet <span class="badge badge-fin">증자</span></td>
+        <td>보통주+전환우선주+$40B ATM+사모</td>
+        <td>$84.75B</td>
+        <td class="small-note">6/2~3, 사상 최대 equity raise(Petrobras $70B 추월) · Berkshire $10B 사모 포함 · AI 인프라</td>
+      </tr>
+      <tr class="hl-row">
+        <td>Meta <span class="badge badge-fin">SPV+채권</span></td>
+        <td>SPV "Beignet"(off-B/S) + 회사채</td>
+        <td>$27.3B + $30B</td>
+        <td class="small-note">Hyperion(루이지애나) · Blue Owl 80%/Meta 20% · 2049 만기 senior secured · A+ · PIMCO·BlackRock 인수</td>
+      </tr>
+      <tr class="hl-row">
+        <td>Oracle <span class="badge badge-fin">채권+증자</span></td>
+        <td>IG bond 1회 + $20B ATM + 전환우선주</td>
+        <td>$45~50B (2026)</td>
+        <td class="small-note">2027 추가 ~$40B · Stargate SPV 파트너부채 $72B+ · D/E ~500% · CDS 폭등</td>
+      </tr>
+      <tr>
+        <td>Microsoft <span class="badge badge-fin">채권</span></td>
+        <td>회사채</td>
+        <td>~$50B (2026E)</td>
+        <td class="small-note">분기 최대 발행 · 커버리지 106%로 자체조달 여력 우위</td>
+      </tr>
+      <tr>
+        <td>Amazon <span class="badge badge-fin">채권</span></td>
+        <td>회사채 + SEC 자금조달 명시</td>
+        <td>$15~20B (2026E)</td>
+        <td class="small-note">FCF -95%로 추가 차입 가능성</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="alert-up">
+    <strong>🚨 구조 변화: 빅테크 off-balance-sheet SPV $120B+</strong><br>
+    Meta Beignet($27B)·Oracle Stargate($72B+)·MS-GIP 등 SPV로 부채를 B/S 밖으로 이연. 리스크는 보험·사모신용으로 전가되나, 수요 둔화 시 잔존가치 보증·재계약 의무로 결국 테크기업에 회귀 가능.
+  </div>
+
+  <h3>⑩ Capex 투자 계획 (3사 + 빅테크)</h3>
+  <table>
+    <thead>
+      <tr><th>주체</th><th>2026 capex</th><th>2027(E)</th><th>비고</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SK하이닉스</td><td class="sk-col">대폭 증액</td><td>—</td><td class="small-note">D램 月 50만→71만장(3년 +40%), 2030년 100만장 목표</td></tr>
+      <tr><td>삼성전자</td><td class="ss-col">증액</td><td>—</td><td class="small-note">D램 3년 月 +17.5만장 · 평택 1c·테일러 2나노</td></tr>
+      <tr><td>마이크론</td><td class="mu-col">~$27B (FY26)</td><td>$40B+ (FY27)</td><td class="small-note">mid-$40B 대폭 상향(메모리 capex 슈퍼사이클)</td></tr>
+      <tr class="total-row"><td>빅5 합산</td><td>$705B</td><td>$915B</td><td class="small-note">메모리 지출 비중 상향 추세</td></tr>
+    </tbody>
+  </table>
+  <p class="timestamp">세미애널리시스: SK 3년간 D램 月 21만장 추가(26년 6만·27년 6만·28년 9만) → 삼성 17.5만장 추가 상회 전망</p>
+
+  <!-- ===== ⑪ LTA/수주 (신규) ===== -->
+  <h3>⑪ LTA/수주 — 매출 계약 (자금조달과 분리) <span class="badge badge-new">신규</span></h3>
+  <div class="divider-note">
+    <strong>📍 정의:</strong> 다년 공급계약(LTA/SCA)은 <strong>손익계산서·매출 가시성</strong> 관점. ⑨ 자금조달(자본조달)과 <strong>회계적으로 완전히 다른 축</strong> — 섞어서 합산하지 말 것.
+  </div>
+  <table>
+    <thead>
+      <tr><th>회사</th><th>계약 형태</th><th>핵심 내용</th></tr>
+    </thead>
+    <tbody>
+      <tr class="hl-row">
+        <td>SK하이닉스 <span class="badge badge-rev">매출</span></td>
+        <td>LTA 다건 (2~5년)</td>
+        <td class="small-note" style="text-align:left;">엔비디아 2년 LTA + 구글 5년 범용 D램 LTA 협상 중(당초 3년→"3년도 짧다"며 5년 확대) · 복수 빅테크 LTA 체결 · 미래에셋 "LTA 비중 50% 초과 전망" · 가격 상·하한·선수금 조건 통상치 상회</td>
+      </tr>
+      <tr class="hl-row">
+        <td>삼성전자 <span class="badge badge-rev">매출</span></td>
+        <td>LTA 정책 전면 전환 (3~5년)</td>
+        <td class="small-note" style="text-align:left;">전영현 부회장(DS) "연·분기→3~5년 다년계약 전환 추진"(주총) · 신규 계약분 최소 3년 LTA만 수용, 분기 단기계약 폐기 · AMD·MS·구글 3년치 물량 · 1Q26 콘콜 "일부 고객사 이미 체결"</td>
+      </tr>
+      <tr class="hl-row">
+        <td>마이크론 <span class="badge badge-rev">매출</span></td>
+        <td>SCA 16건 (take-or-pay, 5년)</td>
+        <td class="small-note" style="text-align:left;">14건 RPO $100B 최소약정 · 예치금 $22B($18B 현금) · DRAM 물량 20%+NAND 1/3 · 4 대형+3 중형 고객 · 자동차 3년 · 가격밴드(상한=Q2'26 시세, 하한=과거 사이클 최고가 상회)</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="alert-down">
+    <strong>📊 LTA가 바꾸는 것 (매출 관점)</strong><br>
+    ① <strong>이익 하방 경직성</strong>: 하한가가 과거 분기 최고가보다 높게 설정 → 다운사이클에도 고마진 유지<br>
+    ② <strong>증설 합리화</strong>: 팔릴 물량 선확정 → "선수주 후생산"으로 무분별 증설·재고 차단<br>
+    ③ <strong>밸류 재평가</strong>: 마이크론 "전체 매출의 40%가 고정/상한가" → 메모리 = 사이클주에서 인프라주로<br>
+    <span style="font-size:10px;">⚠️ 단, ⑨의 SCA 예치금($22B)은 '자금'이지만 회계상 부채/선수금 — LTA 매출약정($100B)과는 별개 항목임에 유의</span>
+  </div>
+
+</div>
+
+<!-- ============ 운영 ============ -->
+<div id="ops" class="section">
+
+  <h2>⚙️ 운영 가이드</h2>
+  <p class="sub">명령어 체계와 파일 구조</p>
+
+  <h3>🔒 데이터 신뢰도 원칙 (매번 준수)</h3>
+  <div class="alert-up">
+    <strong>매 업데이트마다 반드시 검색해서 최신 데이터 확보:</strong><br>
+    ✅ 양사 + 마이크론 주가·시가총액 (직전 종가 기준)<br>
+    ✅ 트렌드포스 6종 가격 (직접 fetch)<br>
+    ✅ 한국 반도체 수출 통계 (산자부 발표시 즉시)<br>
+    ✅ 컨센서스 변화 (4사 신규 리포트 체크)<br>
+    ✅ 자금조달·LTA 신규 이벤트 (⑨·⑪ 갱신)<br><br>
+
+    <strong>❌ 절대 하지 말 것:</strong><br>
+    이전 버전 데이터를 검색 없이 그대로 복사 사용<br>
+    "그대로일 것"이라는 가정으로 갱신 생략<br>
+    추정치 표기 없이 정확한 값처럼 표시<br>
+    <strong>자금조달(B/S)과 LTA(P/L)를 섞거나 합산</strong>
+  </div>
+
+  <h3>📣 명령어</h3>
+  <div class="cmd-box">
+    <span class="cmd">"메모리 업데이트"</span> <span class="desc">→ 주간 (매주 월요일)</span><br>
+    <span class="cmd">"메모리 월간"</span> <span class="desc">→ 월간 (매월 첫째 주)</span><br>
+    <span class="cmd">"컨센서스 업데이트"</span> <span class="desc">→ 컨센서스 4사</span><br>
+    <span class="cmd">"메모리 분기"</span> <span class="desc">→ 분기 종합 (4·7·10·1월)</span><br>
+    <span class="cmd">"메모리 긴급"</span> <span class="desc">→ 특수 이벤트</span><br>
+    <span class="cmd">"자금조달 업데이트"</span> <span class="desc">→ ⑨ 자본조달만</span><br>
+    <span class="cmd">"LTA 업데이트"</span> <span class="desc">→ ⑪ 수주/계약만</span><br>
+    <span class="cmd">"HBM만 업데이트"</span> <span class="desc">→ 특정 항목</span><br><br>
+    <span class="desc"># 그냥 "업데이트"만 보내도 시점 자동 판단</span>
+  </div>
+
+  <h3>📅 갱신 일정</h3>
+  <table>
+    <thead>
+      <tr><th>주기</th><th>다음 일정</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>주간</td><td>2026.06.29 (월)</td></tr>
+      <tr><td>6월 수출 확정</td><td>2026.07.01 (화)</td></tr>
+      <tr><td>월간 + 컨센서스</td><td>2026.07.06 (월)</td></tr>
+      <tr><td>SK하이닉스 ADR 상장</td><td>2026.07.10 (금)</td></tr>
+      <tr><td>삼성 2Q26 실적</td><td>2026.07.23</td></tr>
+      <tr><td>SK 2Q26 실적</td><td>2026.07.29</td></tr>
+      <tr><td>2027 가이던스 발표</td><td>2027.01 (4Q26 실적)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>📁 참조 파일 누적 목록</h3>
+  <div class="file-card">
+    <strong>이 대시보드 (메인, v7)</strong><br>
+    <span class="file-path">memory_dashboard_v7.html</span><br>
+    <span style="font-size:10px;color:#888;">v7 변경: 6/26 종가(SK 269.4만/~1,921조 · 삼성 33.95만/~2,026조 1위 재탈환 · MU $1,129) · 트렌드포스 6/26 현물가 · 매크로 ⑨ 자금조달(신규) + ⑪ LTA/수주(신규) · 6/26 코스피 -5.81% 서킷브레이커 · 애플-CXMT 로비</span>
+  </div>
+  <div class="file-card"><strong>v6 (6/25 메가 변동 + 차트수정)</strong><br><span class="file-path">memory_dashboard_v6_fixed.html / memory_dashboard_v6.html</span></div>
+  <div class="file-card"><strong>v5 (6/22 정기 주간)</strong><br><span class="file-path">memory_dashboard_v5.html</span></div>
+  <div class="file-card"><strong>v4 (6/12 종가 반영)</strong><br><span class="file-path">memory_dashboard_v4.html</span></div>
+  <div class="file-card"><strong>v1~v3 (초기·매크로·주가갱신)</strong><br><span class="file-path">memory_dashboard_v1~v3.html</span></div>
+  <div class="file-card"><strong>실적 정교화 / GitHub Pages 가이드</strong><br><span class="file-path">earnings_refinement_v1.html / github_pages_setup_guide.html</span></div>
+  <div class="file-card"><strong>수출·컨센서스·HBM·캐펙스·사이클 베이스라인</strong><br><span class="file-path">korea_export_0610_update / consensus_2026_2027_v1 / korea_memory_simulation_v2_hbm / hyperscaler_capex_cash_fcf / memory_cycle_comparison.html</span></div>
+
+  <h3>📊 양식 사용법</h3>
+  <div class="insight">
+    <strong>매주 월요일:</strong> "메모리 업데이트" → 트렌드포스 직접 조회 → 6종 가격 + 양사·MU 주가 + 시그널 → "주간" 탭 갱신<br><br>
+    <strong>매월 첫째 주:</strong> "메모리 월간" + "컨센서스 업데이트" → 옴디아·LTA·수출·4사 컨센서스 갱신<br><br>
+    <strong>분기 실적 시즌:</strong> "메모리 분기" → 양사 실적 + HBM 분해 + ODM + 시나리오 재조정<br><br>
+    <strong>자금/계약 이벤트:</strong> "자금조달 업데이트"(⑨) 또는 "LTA 업데이트"(⑪) → 해당 섹션만 갱신, <strong>두 축은 분리 유지</strong>
+  </div>
+
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// 차트 인스턴스 저장
+const chartInstances = {};
+
+// 차트 정의 (캔버스 ID → 차트 설정)
+const chartConfigs = {
+  spotChart: {
+    type: 'line',
+    data: {
+      labels: ['5/29', '6/5', '6/12', '6/18', '6/26'],
+      datasets: [
+        { label: 'DDR5 16Gb', data: [41.90, 43.40, 44.83, 46.00, 46.73], borderColor: '#534AB7', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 4 },
+        { label: 'DDR4 16Gb', data: [61.95, 64.13, 67.00, 69.13, 72.32], borderColor: '#1D9E75', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 4 },
+        { label: 'DDR3 4Gb', data: [9.40, 10.03, 10.67, 10.98, 11.57], borderColor: '#C77B1F', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: {size: 10}, boxWidth: 12 } },
+        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': $' + ctx.parsed.y } }
+      },
+      scales: {
+        y: { beginAtZero: false, ticks: { callback: (v) => '$' + v }, grid: { color: 'rgba(128,128,128,0.1)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  },
+  exportChart: {
+    type: 'bar',
+    data: {
+      labels: ['1월', '2월', '3월', '4월', '5월', '6/1~10', '6/1~20'],
+      datasets: [{
+        label: '반도체 수출 ($억)',
+        data: [124.5, 232.5, 328.3, 319, 371.6, 111, 255],
+        backgroundColor: function(ctx) { return (ctx.dataIndex === 5 || ctx.dataIndex === 6) ? '#C73E2C' : '#534AB7'; },
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => '$' + ctx.parsed.y + '억' } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: (v) => '$' + v + '억' }, grid: { color: 'rgba(128,128,128,0.1)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  },
+  consensusChart: {
+    type: 'line',
+    data: {
+      labels: ['26.02', '26.04', '26.05', '26.06'],
+      datasets: [
+        { label: '삼성 2026', data: [183, 280, 332, 361], borderColor: '#534AB7', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+        { label: 'SK 2026', data: [156, 220, 247, 263], borderColor: '#1D9E75', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+        { label: '삼성 2027', data: [null, null, 431, 431], borderColor: '#534AB7', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2.5, pointRadius: 4, borderDash: [4,4] },
+        { label: 'SK 2027', data: [null, null, 338, 338], borderColor: '#1D9E75', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2.5, pointRadius: 4, borderDash: [4,4] }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: {size: 10}, boxWidth: 12 } },
+        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y + '조' } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: (v) => v + '조' }, grid: { color: 'rgba(128,128,128,0.1)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  }
+};
+
+// 차트 생성 함수 (지연 로딩)
+function renderChart(canvasId) {
+  if (chartInstances[canvasId]) return;
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const section = canvas.closest('.section');
+  if (section && !section.classList.contains('active')) return;
+  try {
+    chartInstances[canvasId] = new Chart(canvas, chartConfigs[canvasId]);
+  } catch (err) {
+    console.warn('Chart creation deferred for', canvasId, err);
+  }
+}
+
+function renderActiveCharts() {
+  const activeSection = document.querySelector('.section.active');
+  if (!activeSection) return;
+  const canvases = activeSection.querySelectorAll('canvas');
+  canvases.forEach(c => renderChart(c.id));
+}
+
+function showTab(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+  setTimeout(() => {
+    renderActiveCharts();
+    window.dispatchEvent(new Event('resize'));
+  }, 50);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', renderActiveCharts);
+} else {
+  renderActiveCharts();
+}
+</script>
+</body>
+</html>
