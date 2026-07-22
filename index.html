@@ -587,6 +587,7 @@ H("byItemWrap",!BI?"":(()=>{
     NAND:  {g:"mem",   desc:"낸드 플래시 칩"},
     MCP:   {g:"mem",   desc:"복합구조칩 · <b>HBM 포함</b>(적층 메모리)"},
     모듈:  {g:"mem",   desc:"디램 모듈(RDIMM 등) · 서버 DRAM 수요 지표"},
+    SSD:   {g:"mem",   desc:"솔리드스테이트 · <b>낸드 완제품</b>(NAND 사업 실규모)"},
     MCOs:  {g:"mix",   desc:"복합부품 · 메모리+로직 혼합 패키지"},
     로직:  {g:"logic", desc:"프로세서·컨트롤러 · 삼성 시스템LSI/파운드리"},
     기타IC:{g:"logic", desc:"이미지센서 등 기타 로직"},
@@ -952,7 +953,7 @@ CH.monthly=()=>{
   const BI=M.exports_by_item;
   if(BI){
     const PAL={DRAM:"#534AB7",NAND:"#1D9E75",MCP:"#C73E2C",MCOs:"#C77B1F",
-               로직:"#2B7A9E",기타IC:"#9E6BB0",모듈:"#B03A5B"};
+               로직:"#2B7A9E",기타IC:"#9E6BB0",모듈:"#B03A5B",SSD:"#3B8C4E"};
     const keys=Object.keys(PAL).filter(k=>BI.series[0][k]!==undefined);
     const line=(cv,rows,fmt)=>new Chart($(cv),{type:"line",options:base_opt(fmt),
       data:{labels:rows.map(r=>mo(r.m)),
