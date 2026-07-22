@@ -581,18 +581,56 @@ H("partialWrap",!PX?"":`
 /* 품목별 수출 분해 (8542) — 없는 스냅샷이면 조용히 건너뜀 */
 const BI=M.exports_by_item;
 H("byItemWrap",!BI?"":(()=>{
-  const COLS=["DRAM","NAND","MCP","MCOs","로직","기타IC","모듈"];
-  const cols=COLS.filter(k=>BI.series[0][k]!==undefined);  // 스냅샷에 있는 그룹만
-  const th=cols.map(c=>`<th>${c}</th>`).join("");
+  /* 품목 메타: 그룹(mem/logic/mix) + 설명 */
+  const META={
+    DRAM:  {g:"mem",   desc:"디램 단품 칩"},
+    NAND:  {g:"mem",   desc:"낸드 플래시 칩"},
+    MCP:   {g:"mem",   desc:"복합구조칩 · <b>HBM 포함</b>(적층 메모리)"},
+    모듈:  {g:"mem",   desc:"디램 모듈(RDIMM 등) · 서버 DRAM 수요 지표"},
+    MCOs:  {g:"mix",   desc:"복합부품 · 메모리+로직 혼합 패키지"},
+    로직:  {g:"logic", desc:"프로세서·컨트롤러 · 삼성 시스템LSI/파운드리"},
+    기타IC:{g:"logic", desc:"이미지센서 등 기타 로직"},
+  };
+  const GLBL={mem:"메모리",mix:"혼합",logic:"비메모리(로직)"};
+  const GCOL={mem:"#534AB7",mix:"#C77B1F",logic:"#2B7A9E"};
+  /* 스냅샷에 있는 그룹만, 메모리→혼합→로직 순으로 정렬 */
+  const order={mem:0,mix:1,logic:2};
+  const cols=Object.keys(META)
+    .filter(k=>BI.series[0][k]!==undefined)
+    .sort((a,b)=>order[META[a].g]-order[META[b].g]);
+
+  /* 그룹 밴드(상단 헤더) — 연속된 같은 그룹을 colspan으로 묶음 */
+  let band="<th rowspan='2'>월</th>";
+  for(let i=0;i<cols.length;){
+    let j=i; while(j<cols.length && META[cols[j]].g===META[cols[i]].g) j++;
+    const g=META[cols[i]].g;
+    band+=`<th colspan="${j-i}" style="color:${GCOL[g]};border-bottom:2px solid ${GCOL[g]}">${GLBL[g]}</th>`;
+    i=j;
+  }
+  band+="<th rowspan='2'>합계</th>";
+  const th2=cols.map(c=>`<th style="color:${GCOL[META[c].g]}">${c}</th>`).join("");
+
   const bodyRow=r=>{const sum=cols.reduce((a,c)=>a+(r[c]||0),0).toFixed(1);
     return `<tr class="${r.tag?"hl-row":""}"><td>${mo(r.m)}</td>`
       +cols.map(c=>`<td>$${r[c]}</td>`).join("")
       +`<td>$${sum}억${r.tag?` <span class="small-note">${r.tag}</span>`:""}</td></tr>`;};
+
+  /* 소계 행(메모리/혼합/비메모리 합) — 최신월 기준 */
+  const lastRow=BI.series[BI.series.length-1];
+  const gsum={}; cols.forEach(c=>{const g=META[c].g; gsum[g]=(gsum[g]||0)+(lastRow[c]||0);});
+  const subtotal=Object.keys(GLBL).filter(g=>gsum[g]!==undefined)
+    .map(g=>`<span style="color:${GCOL[g]}"><b>${GLBL[g]}</b> $${gsum[g].toFixed(1)}억</span>`).join(" · ");
+
+  const legend=cols.map(c=>
+    `<li><span style="color:${GCOL[META[c].g]};font-weight:600">${c}</span> — ${META[c].desc}</li>`).join("");
+
   return `
   <h3>반도체 IC 품목별 수출 ${BADGE[BI.class]}</h3>
   <p class="sub">관세청 8542+8473 · 단위 ${BI.unit} · <b>산업부 반도체 총액과 다름</b>(세번 합산 기준)</p>
-  <table><thead><tr><th>월</th>${th}<th>합계</th></tr></thead>
+  <p class="sub" style="margin-top:6px">${mo(lastRow.m)} 기준 &nbsp;${subtotal}</p>
+  <table><thead><tr>${band}</tr><tr>${th2}</tr></thead>
   <tbody>${BI.series.map(bodyRow).join("")}</tbody></table>
+  <ul class="small-note" style="margin:8px 0 0;padding-left:18px;line-height:1.7">${legend}</ul>
   <div class="chart-wrap"><canvas id="byItemChart"></canvas></div>
   <h4>수출 ASP (역산) ${BADGE[BI.asp.class]}</h4>
   <p class="sub">$/kg · ${BI.asp.note}</p>
