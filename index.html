@@ -187,6 +187,8 @@
     <div id="partialWrap"></div>
     <div class="chart-wrap"><canvas id="exportChart"></canvas></div>
 
+    <div id="byItemWrap"></div>
+
     <h3>옴디아 점유율 (HBM/DRAM/NAND)</h3>
     <table><thead><tr><th>회사</th><th>HBM</th><th>DRAM 전체</th><th>NAND</th></tr></thead>
       <tbody id="tShare"></tbody></table>
@@ -347,6 +349,7 @@
 <script src="data-2026-07-14.js"></script>
 <script src="data-2026-07-20.js"></script>
 <script src="data-2026-07-21.js"></script>
+<script src="data-2026-07-22.js"></script>
 <!-- <script src="data-2026-07-27.js"></script> -->
 
 <script>
@@ -575,6 +578,27 @@ H("partialWrap",!PX?"":`
     <td>${r.k}</td><td class="this-week">${r.v}</td><td class="small-note">${r.m}</td></tr>`).join("")}</tbody></table>
   <div class="alert-down">${PX.derived.note}</div>
   <div class="alert-up">${PX.note}</div>`);
+/* 품목별 수출 분해 (8542) — 없는 스냅샷이면 조용히 건너뜀 */
+const BI=M.exports_by_item;
+H("byItemWrap",!BI?"":(()=>{
+  const COLS=["DRAM","NAND","MCP","MCOs","로직","기타IC","모듈"];
+  const cols=COLS.filter(k=>BI.series[0][k]!==undefined);  // 스냅샷에 있는 그룹만
+  const th=cols.map(c=>`<th>${c}</th>`).join("");
+  const bodyRow=r=>{const sum=cols.reduce((a,c)=>a+(r[c]||0),0).toFixed(1);
+    return `<tr class="${r.tag?"hl-row":""}"><td>${mo(r.m)}</td>`
+      +cols.map(c=>`<td>$${r[c]}</td>`).join("")
+      +`<td>$${sum}억${r.tag?` <span class="small-note">${r.tag}</span>`:""}</td></tr>`;};
+  return `
+  <h3>반도체 IC 품목별 수출 ${BADGE[BI.class]}</h3>
+  <p class="sub">관세청 8542+8473 · 단위 ${BI.unit} · <b>산업부 반도체 총액과 다름</b>(세번 합산 기준)</p>
+  <table><thead><tr><th>월</th>${th}<th>합계</th></tr></thead>
+  <tbody>${BI.series.map(bodyRow).join("")}</tbody></table>
+  <div class="chart-wrap"><canvas id="byItemChart"></canvas></div>
+  <h4>수출 ASP (역산) ${BADGE[BI.asp.class]}</h4>
+  <p class="sub">$/kg · ${BI.asp.note}</p>
+  <div class="chart-wrap"><canvas id="byItemAspChart"></canvas></div>
+  <div class="alert-up">${BI.note}</div>`;
+})());
 H("tShare",M.share.rows.map(r=>`<tr><td>${r.co}</td>
   <td class="${r.key}-col">${r.hbm}</td><td class="${r.key}-col">${r.dram}</td><td>${r.nand}</td></tr>`).join(""));
 H("monthlyNews",M.news.map(n=>`${n.icon} <b>${n.d} ${n.t}</b>: ${n.b}`).join("<br>"));
@@ -886,6 +910,19 @@ CH.monthly=()=>{
     data:{labels:M.exports.series.map(r=>mo(r.m)),
       datasets:[{label:"반도체 수출",data:M.exports.series.map(r=>r.v),
         backgroundColor:c=>c.dataIndex===M.exports.series.length-1?"#C73E2C":"#534AB7",borderRadius:4}]}});
+  /* 품목별 수출 분해 차트 (스냅샷에 있을 때만) */
+  const BI=M.exports_by_item;
+  if(BI){
+    const PAL={DRAM:"#534AB7",NAND:"#1D9E75",MCP:"#C73E2C",MCOs:"#C77B1F",
+               로직:"#2B7A9E",기타IC:"#9E6BB0",모듈:"#B03A5B"};
+    const keys=Object.keys(PAL).filter(k=>BI.series[0][k]!==undefined);
+    const line=(cv,rows,fmt)=>new Chart($(cv),{type:"line",options:base_opt(fmt),
+      data:{labels:rows.map(r=>mo(r.m)),
+        datasets:keys.map(k=>({label:k,data:rows.map(r=>r[k]),
+          borderColor:PAL[k],backgroundColor:"transparent",tension:.3,borderWidth:2.5,pointRadius:3}))}});
+    line("byItemChart",BI.series,v=>"$"+v+"억");
+    line("byItemAspChart",BI.asp.series,v=>"$"+(v/1000).toFixed(0)+"k");
+  }
   new Chart($("consensusChart"),{type:"line",options:base_opt(JO),
     data:{labels:C.trend.map(r=>r.t),datasets:[
       {label:"삼성 2026",data:C.trend.map(r=>r.ss),borderColor:"#534AB7",backgroundColor:"transparent",tension:.3,borderWidth:2.5,pointRadius:4},
