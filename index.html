@@ -187,6 +187,14 @@
     <div id="partialWrap"></div>
     <div class="chart-wrap"><canvas id="exportChart"></canvas></div>
 
+    <h3>품목별 반도체 수출 (HS 10단위 분해) <span class="badge badge-real">✓6월 확정</span></h3>
+    <div class="alert-down" id="byItemWarn"></div>
+    <div style="overflow-x:auto"><table id="byItemTable"><thead id="byItemHead"></thead><tbody id="tByItem"></tbody></table></div>
+    <div class="chart-wrap"><canvas id="byItemChart"></canvas></div>
+    <h4>품목별 ASP <span class="badge" style="opacity:.65">△ 역산·방향성만</span></h4>
+    <div style="overflow-x:auto"><table id="byItemAspTable"><thead id="byItemAspHead"></thead><tbody id="tByItemAsp"></tbody></table></div>
+    <p class="timestamp" id="nByItem"></p>
+
     <h3>옴디아 점유율 (HBM/DRAM/NAND)</h3>
     <table><thead><tr><th>회사</th><th>HBM</th><th>DRAM 전체</th><th>NAND</th></tr></thead>
       <tbody id="tShare"></tbody></table>
@@ -580,6 +588,17 @@ H("tShare",M.share.rows.map(r=>`<tr><td>${r.co}</td>
   <td class="${r.key}-col">${r.hbm}</td><td class="${r.key}-col">${r.dram}</td><td>${r.nand}</td></tr>`).join(""));
 H("monthlyNews",M.news.map(n=>`${n.icon} <b>${n.d} ${n.t}</b>: ${n.b}`).join("<br>"));
 
+/* ── 품목별(HS 10단위) 분해 — 신버전 스냅샷에만 존재 → 가드 ── */
+if(M.exports_by_item){
+  const BI=M.exports_by_item, GO=BI.order;
+  H("byItemWarn","⚠️ "+BI.note);
+  H("byItemHead","<tr><th>월</th>"+GO.map(g=>`<th>${g}</th>`).join("")+"</tr>");
+  H("tByItem",BI.series.map(r=>`<tr><td>${mo(r.m)}</td>`+GO.map(g=>`<td${g==="MCP"?' class="this-week"':""}>$${r[g]}</td>`).join("")+"</tr>").join(""));
+  H("byItemAspHead","<tr><th>월</th>"+GO.map(g=>`<th>${g}</th>`).join("")+"</tr>");
+  H("tByItemAsp",BI.asp.series.map(r=>`<tr><td>${mo(r.m)}</td>`+GO.map(g=>`<td class="small-note">${(r[g]||0).toLocaleString()}</td>`).join("")+"</tr>").join(""));
+  TX("nByItem",`${BI.src} · DRAM=${BI.codes.DRAM}·NAND=${BI.codes.NAND}·MCP=${BI.codes.MCP}·MCOs=${BI.codes.MCOs} · ASP ${BI.asp.note}`);
+}
+
 H("consUpdates",C.updates);
 H("consCards",[["SK 2026","sk",C.annual.sk["2026"]],["SK 2027","sk",C.annual.sk["2027"]],
   ["삼성 2026","ss",C.annual.ss["2026"]],["삼성 2027","ss",C.annual.ss["2027"]]].map(([l,c,v])=>
@@ -887,6 +906,18 @@ CH.monthly=()=>{
     data:{labels:M.exports.series.map(r=>mo(r.m)),
       datasets:[{label:"반도체 수출",data:M.exports.series.map(r=>r.v),
         backgroundColor:c=>c.dataIndex===M.exports.series.length-1?"#C73E2C":"#534AB7",borderRadius:4}]}});
+  if(M.exports_by_item && $("byItemChart")){
+    const BI=M.exports_by_item,
+      GC={DRAM:"#534AB7",NAND:"#1D9E75",MCP:"#C73E2C",MCOs:"#C77B1F","로직":"#4A7AB0","기타IC":"#9AA0A6","모듈":"#D4A017",SSD:"#5FA88C"};
+    new Chart($("byItemChart"),{type:"bar",
+      options:{...base_opt(v=>"$"+v+"억"),
+        plugins:{legend:{position:"bottom",labels:{font:{size:10},boxWidth:12}},
+                 tooltip:{callbacks:{label:c=>c.dataset.label+": $"+c.parsed.y+"억"}}},
+        scales:{x:{stacked:true,grid:{display:false}},
+                y:{stacked:true,beginAtZero:true,ticks:{callback:v=>"$"+v+"억"},grid:{color:"rgba(128,128,128,.1)"}}}},
+      data:{labels:BI.series.map(r=>mo(r.m)),
+        datasets:BI.order.map(g=>({label:g,data:BI.series.map(r=>r[g]),backgroundColor:GC[g],borderRadius:2}))}});
+  }
   new Chart($("consensusChart"),{type:"line",options:base_opt(JO),
     data:{labels:C.trend.map(r=>r.t),datasets:[
       {label:"삼성 2026",data:C.trend.map(r=>r.ss),borderColor:"#534AB7",backgroundColor:"transparent",tension:.3,borderWidth:2.5,pointRadius:4},
