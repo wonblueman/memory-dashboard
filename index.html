@@ -356,6 +356,7 @@
 <script src="data-2026-07-20.js"></script>
 <script src="data-2026-07-21.js"></script>
 <script src="data-2026-07-28.js"></script>
+<script src="data-2026-07-30.js"></script>
 <!-- <script src="data-2026-07-27.js"></script> -->
 
 <script>
@@ -588,15 +589,20 @@ H("tShare",M.share.rows.map(r=>`<tr><td>${r.co}</td>
   <td class="${r.key}-col">${r.hbm}</td><td class="${r.key}-col">${r.dram}</td><td>${r.nand}</td></tr>`).join(""));
 H("monthlyNews",M.news.map(n=>`${n.icon} <b>${n.d} ${n.t}</b>: ${n.b}`).join("<br>"));
 
-/* ── 품목별(HS 10단위) 분해 — 신버전 스냅샷에만 존재 → 가드 ── */
+/* ── 품목별(HS 10단위) 분해 — 품목=행·월=열로 전치(9열 → 마지막 SSD가 화면 밖으로 밀리는 문제 해결). 신버전 스냅샷에만 존재 → 가드 ── */
 if(M.exports_by_item){
-  const BI=M.exports_by_item, GO=BI.order;
+  const BI=M.exports_by_item, GO=BI.order, MS=BI.series.map(r=>r.m);
   H("byItemWarn","⚠️ "+BI.note);
-  H("byItemHead","<tr><th>월</th>"+GO.map(g=>`<th>${g}</th>`).join("")+"</tr>");
-  H("tByItem",BI.series.map(r=>`<tr><td>${mo(r.m)}</td>`+GO.map(g=>`<td${g==="MCP"?' class="this-week"':""}>$${r[g]}</td>`).join("")+"</tr>").join(""));
-  H("byItemAspHead","<tr><th>월</th>"+GO.map(g=>`<th>${g}</th>`).join("")+"</tr>");
-  H("tByItemAsp",BI.asp.series.map(r=>`<tr><td>${mo(r.m)}</td>`+GO.map(g=>`<td class="small-note">${(r[g]||0).toLocaleString()}</td>`).join("")+"</tr>").join(""));
-  TX("nByItem",`${BI.src} · DRAM=${BI.codes.DRAM}·NAND=${BI.codes.NAND}·MCP=${BI.codes.MCP}·MCOs=${BI.codes.MCOs} · ASP ${BI.asp.note}`);
+  H("byItemHead","<tr><th>품목 ($억)</th>"+MS.map(m=>`<th>${mo(m)}</th>`).join("")+"</tr>");
+  H("tByItem",GO.map(g=>{
+    const code=BI.codes&&BI.codes[g]?` <span class="small-note">${BI.codes[g]}</span>`:"";
+    return `<tr${g==="SSD"?' class="hl-row"':""}><td><b>${g}</b>${code}</td>`+
+      BI.series.map(r=>`<td${g==="MCP"?' class="this-week"':""}>$${r[g]}</td>`).join("")+"</tr>";
+  }).join(""));
+  H("byItemAspHead","<tr><th>품목 ($/kg)</th>"+MS.map(m=>`<th>${mo(m)}</th>`).join("")+"</tr>");
+  H("tByItemAsp",GO.map(g=>`<tr${g==="SSD"?' class="hl-row"':""}><td><b>${g}</b></td>`+
+    BI.asp.series.map(r=>`<td class="small-note">${(r[g]||0).toLocaleString()}</td>`).join("")+"</tr>").join(""));
+  TX("nByItem",`${BI.src} · ${BI.asp.note}`);
 }
 
 H("consUpdates",C.updates);
