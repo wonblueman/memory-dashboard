@@ -657,7 +657,7 @@ H("tOpTrend",Q.op_trend.series.map(r=>`<tr class="${r.q==="2Q26"?"hl-row":""}">
   <td class="small-note">${r.note||""}</td></tr>`).join("")
   +`<tr class="total-row"><td>2026 연간</td><td class="sk-col">${C.annual.sk["2026"]}조</td>
     <td class="ss-col">${C.annual.ss["2026"]}조</td><td class="small-note">컨센서스 탭에서 자동 참조</td></tr>`);
-TX("nOpTrend",Q.op_trend.note);
+H("nOpTrend",Q.op_trend.note);
 H("tMu",Q.micron_q3.rows.map(r=>`<tr class="${r.hl?"hl-row":""}"><td>${r.k}</td>
   <td class="mu-col">${r.a}</td><td>${r.c}</td><td class="up">${r.d}</td></tr>`).join(""));
 H("tHbm",Q.hbm_share.rows.map(r=>`<tr class="${r.hl?"hl-row":""}"><td>${r.gen}</td>
@@ -670,7 +670,7 @@ H("tAiSnap",AI.snapshot.map(r=>`<tr class="${r.hl?"hl-row":""}">
 H("tAiTrend",AI.trend.map(r=>`<tr class="${r.hl?"hl-row":""}"><td>${r.t}</td>
   <td>${r.gpt_wau}</td><td>${r.gem_mau}</td><td class="mu-col">$${r.openai_arr}B</td>
   <td class="sk-col">$${r.anthropic_arr}B</td><td>${r.tok}</td></tr>`).join(""));
-TX("nArr",AI.arr_note); TX("nToken",AI.tokens.note); TX("nRet",AI.ret_note);
+H("nArr",AI.arr_note); TX("nToken",AI.tokens.note); TX("nRet",AI.ret_note);
 H("aiLink",AI.link); TX("aiSrc",AI.src_policy);
 
 H("thCapex","<th>회사</th>"+MC.capex_guide.cols.map(c=>`<th>${c}</th>`).join(""));
