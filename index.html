@@ -187,7 +187,6 @@
     <p class="sub">💡 그래프의 점에 마우스를 올리면 그날 <b>종가·등락률·이벤트</b>가 뜹니다. 가격대가 달라 시작일=100으로 맞춰 움직임을 비교합니다.</p>
     <div class="chart-wrap" style="height:320px"><canvas id="eqChart"></canvas></div>
     <p class="timestamp" id="nEq"></p>
-    <div id="muCard"></div>
     <h3>관전 포인트</h3>
     <div class="alert-up" id="watch"></div>
   </div>
@@ -450,6 +449,12 @@ const md=i=>`${+i.slice(5,7)}/${+i.slice(8,10)}`;
 const mo=i=>`${+i.slice(5,7)}월`;
 const usd=v=>"$"+(v>=100?v.toLocaleString(undefined,{maximumFractionDigits:2}):v.toFixed(2));
 const won=v=>v.toLocaleString("ko-KR");
+// 툴팁 긴 텍스트 줄바꿈(잘림 방지)
+const wrapTip=(str,n=26)=>{const out=[];let x=String(str).trim();
+  while(x.length>n){const seg=x.slice(0,n+6);
+    let m=Math.max(seg.lastIndexOf("·"),seg.lastIndexOf("/"),seg.lastIndexOf(" "),seg.lastIndexOf(")"));
+    const cut=m>n*0.5?m+1:n; out.push(x.slice(0,cut).trim()); x=x.slice(cut).trim();}
+  if(x)out.push(x); return out;};
 const dday=iso=>Math.round((new Date(iso+"T00:00:00")-TODAY)/86400000);
 const last=id=>{const s=PR[id].series;return s.length?s[s.length-1]:null};
 const prev=id=>{const s=PR[id].series;return s.length>1?s[s.length-2]:null};
@@ -568,16 +573,7 @@ function eqCell(k,d){const r=EQ[k].daily.find(x=>x.d===d);
   return`<span class="${cls}">${won(r.close)}${pct}</span>${mk}`}
 /* 최근 주가 흐름은 CH.weekly의 eqChart(그래프+호버)로 이동 */
 H("nEq",S.notes.equities);
-const mu=lastClose("micron");
-const muPending=EQ.micron.daily.filter(d=>d.close===null&&!d.holiday);
-H("muCard",`<div class="stock-card">
-  <div><div class="sc-name">마이크론 (${md(mu.d)} 확정 종가) ${BADGE[mu.class]}</div>
-       <div class="sc-detail">${mu.detail||mu.src}</div></div>
-  <div><div class="sc-price mu-col">$${won(mu.close)}</div>
-       <div class="sc-per">${mu.chg_pct>0?"+":""}${mu.chg_pct}%</div></div></div>`
-  + muPending.map(d=>`<div class="stock-card" style="background:#FBEEE4">
-      <div><div class="sc-name">마이크론 (${md(d.d)}) ${BADGE.unavailable}</div>
-           <div class="sc-detail">${d.note}</div></div></div>`).join(""));
+/* 마이크론 텍스트 카드 제거 — 한눈에 탭 KPI로 대체(주간 탭 클러터 정리) */
 H("watch",S.watchlist.map((w,i)=>`<b>${i+1}.</b> ${w}`).join("<br>"));
 
 });
@@ -962,7 +958,7 @@ CH.weekly=()=>{
               const v=id==="kospi"?r.close.toLocaleString():won(r.close);
               const pct=(r.chg_pct??null)!==null?` (${r.chg_pct>0?"+":""}${r.chg_pct}%)`:"";
               return c.dataset.label+": "+v+pct;},
-            afterBody:items=>{const ev=S.day_events[eqDates[items[0].dataIndex]];return ev?["","📌 "+ev]:"";}}}},
+            afterBody:items=>{const ev=S.day_events[eqDates[items[0].dataIndex]];return ev?["",...wrapTip("📌 "+ev,28)]:"";}}}},
         scales:{y:{title:{display:true,text:"시작일=100"},grid:{color:"rgba(128,128,128,.1)"}},x:{grid:{display:false}}}},
       data:{labels:eqDates.map(md),datasets:[mkS("sk_hynix","#C73E2C"),mkS("samsung","#534AB7"),mkS("kospi","#4A7AB0")]}});
   }
