@@ -177,12 +177,15 @@
       <tbody id="tSpot"></tbody></table>
     <p class="timestamp" id="nSpot"></p>
     <div class="chart-wrap"><canvas id="spotChart"></canvas></div>
+    <h3>DRAM 모듈 현물 추이</h3>
+    <p class="sub">서버 RDIMM 32GB는 오른쪽 축, 데스크톱 UDIMM 16GB는 왼쪽 축(가격대 차이).</p>
+    <div class="chart-wrap"><canvas id="moduleChart"></canvas></div>
     <h3>NAND 웨이퍼 현물 추이 (512Gb TLC)</h3>
     <div class="chart-wrap"><canvas id="nandChart"></canvas></div>
     <p class="timestamp" id="nNandChart"></p>
-    <h3>최근 주가 흐름</h3>
-    <table><thead><tr><th>일자</th><th>SK하이닉스</th><th>삼성전자</th><th>코스피</th><th>이벤트</th></tr></thead>
-      <tbody id="tEq"></tbody></table>
+    <h3>최근 주가 흐름 <span class="badge badge-der">시작일=100 환산</span></h3>
+    <p class="sub">💡 그래프의 점에 마우스를 올리면 그날 <b>종가·등락률·이벤트</b>가 뜹니다. 가격대가 달라 시작일=100으로 맞춰 움직임을 비교합니다.</p>
+    <div class="chart-wrap" style="height:320px"><canvas id="eqChart"></canvas></div>
     <p class="timestamp" id="nEq"></p>
     <div id="muCard"></div>
     <h3>관전 포인트</h3>
@@ -196,6 +199,11 @@
     <p class="timestamp" id="nExport"></p>
     <div id="partialWrap"></div>
     <div class="chart-wrap"><canvas id="exportChart"></canvas></div>
+
+    <h3>10일 기간별 반도체 수출 · 월별 비교 <span class="badge badge-real">✓관세청</span></h3>
+    <p class="sub">각 달을 1~10일·11~20일·21~말일 세 구간으로 나눠 비교. 11~20·21~말은 누적 잠정치 차감 계산. 8월은 1~10일까지.</p>
+    <div class="chart-wrap"><canvas id="periodChart"></canvas></div>
+    <p class="timestamp" id="nPeriod"></p>
 
     <h3>품목별 반도체 수출 (HS 10단위 분해) <span class="badge badge-real">✓6월 확정</span></h3>
     <div class="alert-down" id="byItemWarn"></div>
@@ -370,6 +378,7 @@
 <script src="data-2026-07-31.js"></script>
 <script src="data-2026-08-03.js"></script>
 <script src="data-2026-08-09.js"></script>
+<script src="data-2026-08-11.js"></script>
 <!-- <script src="data-2026-07-27.js"></script> -->
 
 <script>
@@ -557,9 +566,7 @@ function eqCell(k,d){const r=EQ[k].daily.find(x=>x.d===d);
   const pct=(r.chg_pct??null)!==null?` (${r.chg_pct>0?"+":""}${r.chg_pct}%)`:"";
   const mk=r.class==="derived"?' <span class="dt" style="color:#534AB7">역산</span>':"";
   return`<span class="${cls}">${won(r.close)}${pct}</span>${mk}`}
-H("tEq",dates.map(d=>`<tr><td>${md(d)}</td><td>${eqCell("sk_hynix",d)}</td>
-  <td>${eqCell("samsung",d)}</td><td>${eqCell("kospi",d)}</td>
-  <td class="small-note">${S.day_events[d]||""}</td></tr>`).join(""));
+/* 최근 주가 흐름은 CH.weekly의 eqChart(그래프+호버)로 이동 */
 TX("nEq",S.notes.equities);
 const mu=lastClose("micron");
 const muPending=EQ.micron.daily.filter(d=>d.close===null&&!d.holiday);
@@ -915,9 +922,50 @@ CH.weekly=()=>{
   const ds=(id,c)=>({label:P[id].label,data:PR[id].series.map(p=>({x:md(p.d),y:p.v})),
     borderColor:c,backgroundColor:"transparent",tension:.3,borderWidth:2,pointRadius:4,spanGaps:true});
   new Chart($("spotChart"),{type:"line",options:base_opt(D$),
-    data:{datasets:[ds("ddr5_16gb","#534AB7"),ds("ddr4_16gb","#1D9E75"),ds("ddr3_4gb","#C77B1F")]}});
+    data:{datasets:[ds("ddr5_16gb","#534AB7"),ds("ddr4_16gb","#1D9E75"),ds("ddr4_8gb","#C73E2C"),ds("ddr3_4gb","#C77B1F")]}});
   new Chart($("nandChart"),{type:"line",options:base_opt(D$),
     data:{datasets:[ds("nand_tlc_512gb","#C77B1F")]}});
+
+  // 모듈 현물 추이 — RDIMM(우축)·UDIMM(좌축) 이중 축
+  if($("moduleChart")){
+    new Chart($("moduleChart"),{type:"line",
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:"bottom",labels:{font:{size:10},boxWidth:12}},
+                 tooltip:{callbacks:{label:c=>c.dataset.label+": $"+c.parsed.y}}},
+        scales:{x:{grid:{display:false}},
+          y :{position:"left", title:{display:true,text:"UDIMM $"},ticks:{callback:D$},grid:{color:"rgba(128,128,128,.1)"}},
+          y1:{position:"right",title:{display:true,text:"RDIMM $"},ticks:{callback:D$},grid:{display:false}}}},
+      data:{datasets:[
+        {...ds("udimm5_16gb","#1D9E75"),yAxisID:"y"},
+        {...ds("udimm4_16gb","#4A7AB0"),yAxisID:"y"},
+        {...ds("rdimm_32gb","#C73E2C"),yAxisID:"y1"}
+      ]}});
+  }
+
+  // 최근 주가 흐름 — 시작일=100 환산 · 이벤트 호버 툴팁
+  if($("eqChart")){
+    const eqDates=[...new Set(Object.values(EQ).flatMap(e=>e.daily.filter(d=>d.close!==null).map(d=>d.d)))].sort().slice(-15);
+    const mkS=(id,c)=>{
+      const cl=eqDates.map(d=>{const r=EQ[id].daily.find(x=>x.d===d);return r&&r.close!==null?r.close:null;});
+      const base=cl.find(v=>v!=null);
+      return {label:P[id].label,borderColor:c,backgroundColor:"transparent",tension:.25,borderWidth:2,pointRadius:3,pointHoverRadius:6,spanGaps:true,
+        data:cl.map(v=>v!=null?+(v/base*100).toFixed(2):null)};
+    };
+    const ids=["sk_hynix","samsung","kospi"];
+    new Chart($("eqChart"),{type:"line",
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+        plugins:{legend:{position:"bottom",labels:{font:{size:10},boxWidth:12}},
+          tooltip:{callbacks:{
+            title:items=>md(eqDates[items[0].dataIndex]),
+            label:c=>{const d=eqDates[c.dataIndex],id=ids[c.datasetIndex],r=EQ[id].daily.find(x=>x.d===d);
+              if(!r||r.close==null)return c.dataset.label+": —";
+              const v=id==="kospi"?r.close.toLocaleString():won(r.close);
+              const pct=(r.chg_pct??null)!==null?` (${r.chg_pct>0?"+":""}${r.chg_pct}%)`:"";
+              return c.dataset.label+": "+v+pct;},
+            afterBody:items=>{const ev=S.day_events[eqDates[items[0].dataIndex]];return ev?["","📌 "+ev]:"";}}}},
+        scales:{y:{title:{display:true,text:"시작일=100"},grid:{color:"rgba(128,128,128,.1)"}},x:{grid:{display:false}}}},
+      data:{labels:eqDates.map(md),datasets:[mkS("sk_hynix","#C73E2C"),mkS("samsung","#534AB7"),mkS("kospi","#4A7AB0")]}});
+  }
 };
 CH.monthly=()=>{
   new Chart($("exportChart"),{type:"bar",
@@ -925,6 +973,18 @@ CH.monthly=()=>{
     data:{labels:M.exports.series.map(r=>mo(r.m)),
       datasets:[{label:"반도체 수출",data:M.exports.series.map(r=>r.v),
         backgroundColor:c=>c.dataIndex===M.exports.series.length-1?"#C73E2C":"#534AB7",borderRadius:4}]}});
+
+  // 10일 기간별 · 월별 비교 (그룹 막대: x=기간, 시리즈=월)
+  if(M.exports.period_compare && $("periodChart")){
+    const PC=M.exports.period_compare, MC={"2026-06":"#9AA0A6","2026-07":"#534AB7","2026-08":"#C73E2C"};
+    new Chart($("periodChart"),{type:"bar",
+      options:{...base_opt(v=>"$"+v+"억"),
+        plugins:{legend:{position:"bottom",labels:{font:{size:10},boxWidth:12}},
+                 tooltip:{callbacks:{label:c=>c.dataset.label+": "+(c.parsed.y!=null?"$"+c.parsed.y+"억":"미정")}}}},
+      data:{labels:PC.periods,
+        datasets:PC.months.map(m=>({label:(+m.m.slice(5))+"월",data:m.v,backgroundColor:MC[m.m]||"#888",borderRadius:3}))}});
+    if($("nPeriod"))H("nPeriod",PC.method+"<br>"+PC.note);
+  }
   if(M.exports_by_item && $("byItemChart")){
     const BI=M.exports_by_item,
       GC={DRAM:"#534AB7",NAND:"#1D9E75",MCP:"#C73E2C",MCOs:"#C77B1F","로직":"#4A7AB0","기타IC":"#9AA0A6","모듈":"#D4A017",SSD:"#5FA88C"};

@@ -342,7 +342,7 @@ equities: {
             detail:"✅ SK와 희비 갈림 — 엔비디아 HBM 우려는 SK 직격, 삼성은 상대적 안전지대로 강세. 장중 저가매수 후 외인 매물에 상승분 축소. 시총 1,351조"}]},
 
   micron:{ name:"마이크론", unit:"USD", market:"US",
-    kpi_sub:"7/29 $739·7/30 $874.66(+18.36%) 확정(보류 해소) · 7/30밤 $919 오버나잇 · SK ADR $143.73(프리미엄 ~21%)",
+    kpi_sub:"8/7 $877.57(야후/구글 파이낸스) · 시총 ~$991B · 7월 −28.7% 후 8월 반등 · 씨티 목표가 $1,150",
     shares:{ v:1129000000, as_of:"2026-06-30", class:"measured",
              src:"CNBC 1.13B + 교차검증: 구글파이낸스 시총 $1.08조 ÷ $959.48 = 1,129M ✓" },
     daily:[{d:"2026-07-13",close:null,chg_pct:null,class:"unavailable",needs_recheck:true,
@@ -386,8 +386,9 @@ equities: {
             detail:"✅ 삼성 '2028년까지 공급부족' 경고 + MS·램리서치 호실적에 메모리 급반등(SOXX +8%·샌디스크 +26%). 장 마감 후 +5.07% $919.29(오버나잇). 버리 $880 부근 숏 확대"},
            {d:"2026-07-31",close:null,chg_pct:null,class:"unavailable",needs_recheck:true,
             note:"❌ 7/31(금) 미 정규장 종가 미확보 — 오버나잇 $919 이후. SK ADR는 7/31 $143.73(프리미엄 ~21%)"},
-           {d:"2026-08-07",close:null,chg_pct:null,class:"unavailable",needs_recheck:true,
-            note:"❌ 8월 미 정규장 종가 미확보(이번 회차 미조사). ★ 씨티, 마이크론 목표가 $1,400→$1,150 하향(메모리 가격 2027 2Q 정점 전망) — 피크아웃 시점 논쟁 재점화"}]},
+           {d:"2026-08-07",close:877.57,chg_pct:null,class:"measured",
+            src:"Yahoo Finance·WallStreetZen·stockmarketwatch '8/7 종가 $877.57' — 다수 소스 일치",
+            detail:"✅ 야후/구글 파이낸스 기준 반영. 시총 ~$991B(×11.29억주). 7월 −28.7% 후 8월 반등. 8/10 장중 ~$864 참고. 씨티 목표가 $1,150(−18%, '메모리가격 2027 정점')·SK 38조 공장계획"}]},
 
   kospi:{ name:"코스피", unit:"PT", market:"KRX",
     daily:[{d:"2026-07-13",close:6806.93,chg_pct:-8.95,class:"measured",detail:"서킷브레이커(올해 7번째)"},
