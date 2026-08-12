@@ -567,7 +567,7 @@ function eqCell(k,d){const r=EQ[k].daily.find(x=>x.d===d);
   const mk=r.class==="derived"?' <span class="dt" style="color:#534AB7">역산</span>':"";
   return`<span class="${cls}">${won(r.close)}${pct}</span>${mk}`}
 /* 최근 주가 흐름은 CH.weekly의 eqChart(그래프+호버)로 이동 */
-TX("nEq",S.notes.equities);
+H("nEq",S.notes.equities);
 const mu=lastClose("micron");
 const muPending=EQ.micron.daily.filter(d=>d.close===null&&!d.holiday);
 H("muCard",`<div class="stock-card">
@@ -948,7 +948,7 @@ CH.weekly=()=>{
     const mkS=(id,c)=>{
       const cl=eqDates.map(d=>{const r=EQ[id].daily.find(x=>x.d===d);return r&&r.close!==null?r.close:null;});
       const base=cl.find(v=>v!=null);
-      return {label:P[id].label,borderColor:c,backgroundColor:"transparent",tension:.25,borderWidth:2,pointRadius:3,pointHoverRadius:6,spanGaps:true,
+      return {label:EQ[id].name,borderColor:c,backgroundColor:"transparent",tension:.25,borderWidth:2,pointRadius:3,pointHoverRadius:6,spanGaps:true,
         data:cl.map(v=>v!=null?+(v/base*100).toFixed(2):null)};
     };
     const ids=["sk_hynix","samsung","kospi"];
