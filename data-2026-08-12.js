@@ -22,6 +22,71 @@ window.SNAPSHOTS["2026-08-12"] = {
          note:"하반기 공급부족 심화 전망(삼성 '2028까지 공급부족' 자신감)"}
       ],
       note:"✅ <b>2Q26 확정 반영</b> — SK 60.5조·삼성(전사) 89.5조. 1Q·2Q measured(●확정), 3Q~4Q estimated(추정). SK는 사상 최대 영업익에도 컨센 하회+주주환원 미제시로 발표일 급락 / 삼성은 DS 89.2조로 사실상 전사 이익 전부가 반도체."
+    },
+    scorecard:{
+      note:"3사 동일 양식 · 실적 vs 컨센서스 vs 초과율. ⚠️ 단위 상이 — SK·삼성=조원(EPS 원), 마이크론=$B. SK/삼성은 영업이익률(OPM), 마이크론은 매출총이익률(GM). 순이익 컨센은 증권사가 잘 안 내 빈칸 많음. 초과율=실적/컨센−1.",
+      order:["sk_hynix","samsung","micron"],
+      companies:{
+        sk_hynix:{ name:"SK하이닉스", color:"sk", quarters:[
+          { q:"2026 2분기", tag:"7/29 확정", cls:"measured", rows:[
+              {k:"매출",       a:79.3,   c:83.6,  u:"조"},
+              {k:"영업이익",   a:60.5,   c:64.7,  u:"조", hl:true},
+              {k:"순이익",     a:93.9,   c:51.6,  u:"조", note:"일회성 평가익 63.3조 포함 → 경상 ~30.6조"},
+              {k:"EPS",        a:128571, c:68565, u:"원", note:"일회성 포함"},
+              {k:"영업이익률", a:76,     c:null,  u:"%"}
+            ],
+            bottom:[
+              {k:"가이던스", v:"HBM4 3분기 매출 3배·D램 고정가 30%+ 상승"},
+              {k:"Capex",    v:"2026 40조원 후반(연간)·'CapEx Discipline' 유지"},
+              {k:"수주/LTA", v:"엔비디아 2년·구글 5년 LTA 협상 진행"}
+            ] },
+          { q:"2026 1분기", tag:"확정", cls:"measured", rows:[
+              {k:"매출",       a:52.6, c:null, u:"조"},
+              {k:"영업이익",   a:37.6, c:null, u:"조"},
+              {k:"영업이익률", a:72,   c:null, u:"%"}
+            ] }
+        ]},
+        samsung:{ name:"삼성전자", color:"ss", quarters:[
+          { q:"2026 2분기", tag:"7/30 확정", cls:"measured", rows:[
+              {k:"매출(전사)",     a:171.5, c:null, u:"조"},
+              {k:"영업이익(전사)", a:89.5,  c:85.5, u:"조", hl:true},
+              {k:"└ DS(반도체)",   a:89.2,  c:null, u:"조", note:"전사의 99.7%"},
+              {k:"└ DX",           a:-0.8,  c:null, u:"조", note:"첫 적자 전환"},
+              {k:"순이익",         a:71.6,  c:null, u:"조", note:"순이익률 42%(정상)"},
+              {k:"EPS",            a:10849, c:null, u:"원"},
+              {k:"영업이익률",     a:52,    c:null, u:"%"}
+            ],
+            bottom:[
+              {k:"가이던스", v:"'2028까지 공급부족' 자신감·HBM4 3분기 3배"},
+              {k:"Capex",    v:"2026E ~52조(연간)·R&D 16조 역대 최대"},
+              {k:"수주/LTA", v:"빅테크 장기공급계약(LTA) 정책화"}
+            ] },
+          { q:"2026 1분기", tag:"확정", cls:"measured", rows:[
+              {k:"매출(전사)",     a:133.9, c:null, u:"조"},
+              {k:"영업이익(전사)", a:57.2,  c:null, u:"조"},
+              {k:"EPS",            a:7138,  c:null, u:"원"},
+              {k:"영업이익률",     a:43,    c:null, u:"%"}
+            ] }
+        ]},
+        micron:{ name:"마이크론", color:"mu", unit_hint:"$B (fiscal)", quarters:[
+          { q:"FQ3 2026", tag:"6/24 확정 (5/28 종료)", cls:"measured", rows:[
+              {k:"매출",              a:41.46, c:35.59, u:"$B"},
+              {k:"영업이익(추정)",    a:33.5,  c:null,  u:"$B", note:"△ 역산(GP−opex)·근사"},
+              {k:"순이익(GAAP)",      a:28.24, c:null,  u:"$B"},
+              {k:"순이익(Non-GAAP)",  a:28.86, c:null,  u:"$B"},
+              {k:"EPS(adj)",          a:25.11, c:20.49, u:"$"},
+              {k:"Gross Margin",      a:84.9,  c:81,    u:"%"}
+            ],
+            bottom:[
+              {k:"가이던스", v:"FQ4 매출 $50B±1·EPS $31±1·GM 86% (컨센 대폭 상회)"},
+              {k:"Capex",    v:"FQ3 $7.1B·FY26 ~$27B·FY27 $40B+"},
+              {k:"수주/LTA", v:"SCA 16건 $100B+·예치금 $22B·DRAM 20%/NAND 1/3 커버"}
+            ] },
+          { q:"FQ2 2026", tag:"확정", cls:"measured", rows:[
+              {k:"매출", a:23.86, c:null, u:"$B"}
+            ] }
+        ]}
+      }
     }
   },
   ai_usage:{
