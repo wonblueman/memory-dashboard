@@ -29,11 +29,12 @@ window.SNAPSHOTS["2026-08-12"] = {
       companies:{
         sk_hynix:{ name:"SK하이닉스", color:"sk", quarters:[
           { q:"2026 2분기", tag:"7/29 확정", cls:"measured", rows:[
-              {k:"매출",       a:79.3,   c:83.6,  u:"조"},
-              {k:"영업이익",   a:60.5,   c:64.7,  u:"조", hl:true},
-              {k:"순이익",     a:93.9,   c:51.6,  u:"조", note:"일회성 평가익 63.3조 포함 → 경상 ~30.6조"},
-              {k:"EPS",        a:128571, c:68565, u:"원", note:"일회성 포함"},
-              {k:"영업이익률", a:76,     c:null,  u:"%"}
+              {k:"매출",       a:79.3,   c:83.6,  u:"조", m:"rev"},
+              {k:"영업이익",   a:60.5,   c:64.7,  u:"조", hl:true, m:"op"},
+              {k:"순이익",     a:93.9,   c:51.6,  u:"조", note:"일회성 평가익 63.3조 포함 → 경상 ~30.6조", m:"net"},
+              {k:"EPS",        a:128571, c:68565, u:"원", note:"일회성 포함", m:"eps"},
+              {k:"영업이익률", a:76,     c:null,  u:"%", m:"opm"},
+              {k:"Gross Margin", a:88,   c:null,  u:"%", est:true, note:"△역산(영업익+판관비 추정)·미공시", m:"gm"}
             ],
             bottom:[
               {k:"가이던스", v:"HBM4 3분기 매출 3배·D램 고정가 30%+ 상승"},
@@ -48,13 +49,14 @@ window.SNAPSHOTS["2026-08-12"] = {
         ]},
         samsung:{ name:"삼성전자", color:"ss", quarters:[
           { q:"2026 2분기", tag:"7/30 확정", cls:"measured", rows:[
-              {k:"매출(전사)",     a:171.5, c:null, u:"조"},
-              {k:"영업이익(전사)", a:89.5,  c:85.5, u:"조", hl:true},
+              {k:"매출(전사)",     a:171.5, c:null, u:"조", m:"rev"},
+              {k:"영업이익(전사)", a:89.5,  c:85.5, u:"조", hl:true, m:"op"},
               {k:"└ DS(반도체)",   a:89.2,  c:null, u:"조", note:"전사의 99.7%"},
               {k:"└ DX",           a:-0.8,  c:null, u:"조", note:"첫 적자 전환"},
-              {k:"순이익",         a:71.6,  c:null, u:"조", note:"순이익률 42%(정상)"},
-              {k:"EPS",            a:10849, c:null, u:"원"},
-              {k:"영업이익률",     a:52,    c:null, u:"%"}
+              {k:"순이익",         a:71.6,  c:null, u:"조", note:"순이익률 42%(정상)", m:"net"},
+              {k:"EPS",            a:10849, c:null, u:"원", m:"eps"},
+              {k:"영업이익률",     a:52,    c:null, u:"%", m:"opm"},
+              {k:"Gross Margin",   a:71,    c:null, u:"%", est:true, note:"△역산(영업익+판관비 추정·R&D 16조 포함)·미공시", m:"gm"}
             ],
             bottom:[
               {k:"가이던스", v:"'2028까지 공급부족' 자신감·HBM4 3분기 3배"},
@@ -70,12 +72,12 @@ window.SNAPSHOTS["2026-08-12"] = {
         ]},
         micron:{ name:"마이크론", color:"mu", unit_hint:"$B (fiscal)", quarters:[
           { q:"FQ3 2026", tag:"6/24 확정 (5/28 종료)", cls:"measured", rows:[
-              {k:"매출",              a:41.46, c:35.59, u:"$B"},
-              {k:"영업이익(추정)",    a:33.5,  c:null,  u:"$B", note:"△ 역산(GP−opex)·근사"},
-              {k:"순이익(GAAP)",      a:28.24, c:null,  u:"$B"},
+              {k:"매출",              a:41.46, c:35.59, u:"$B", m:"rev"},
+              {k:"영업이익(추정)",    a:33.5,  c:null,  u:"$B", note:"△ 역산(GP−opex)·근사", m:"op"},
+              {k:"순이익(GAAP)",      a:28.24, c:null,  u:"$B", m:"net"},
               {k:"순이익(Non-GAAP)",  a:28.86, c:null,  u:"$B"},
-              {k:"EPS(adj)",          a:25.11, c:20.49, u:"$"},
-              {k:"Gross Margin",      a:84.9,  c:81,    u:"%"}
+              {k:"EPS(adj)",          a:25.11, c:20.49, u:"$", m:"eps"},
+              {k:"Gross Margin",      a:84.9,  c:81,    u:"%", m:"gm"}
             ],
             bottom:[
               {k:"가이던스", v:"FQ4 매출 $50B±1·EPS $31±1·GM 86% (컨센 대폭 상회)"},

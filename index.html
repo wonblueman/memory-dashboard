@@ -130,6 +130,8 @@
   .sc-qh{font-size:12px;font-weight:700;margin:10px 0 4px;color:#555}
   .sc-past{opacity:.9}.sc-past .sc-qh{color:#999}
   .sc-card table{margin-top:2px}
+  .sc-qual{border-top:.5px solid #f0f0f0;padding-top:2px}
+  .sc-qline{padding:3px 0;line-height:1.45}
 </style>
 </head>
 <body>
@@ -662,7 +664,16 @@ TX("qSub",`매분기 실적 후 갱신 · 다음: SK ${sched("sk_q2").d.slice(5)
     if(u==="조")return (v<0?"−":"")+Math.abs(v)+"조"; return v; };
   const beat=(a,c)=>{ if(c==null||a==null)return'<td class="small-note">—</td>';
     const pt=(a/c-1)*100; return `<td class="${pt>=0?"up":"down"}">${pt>=0?"+":""}${pt.toFixed(1)}%</td>`; };
-  H("scorecard", SC.order.map(cid=>{
+  // 3사 한눈 비교 (각 사 최신 분기 실적)
+  const metrics=[["rev","매출"],["op","영업이익"],["net","순이익"],["eps","EPS"],["opm","영업이익률"],["gm","Gross Margin"]];
+  const gRow=(co,m)=>co.quarters[0].rows.find(r=>r.m===m);
+  const combined=`<div class="sc-card"><div class="sc-cardh">🔀 3사 한눈 비교 <span class="small-note" style="font-weight:400">(각 사 최신 분기 실적)</span></div>
+    <div style="padding:6px 10px 12px"><table><thead><tr><th>항목</th>${SC.order.map(cid=>`<th class="${SC.companies[cid].color}-col" style="text-align:right">${SC.companies[cid].name}<br><span class="small-note" style="font-weight:400">${SC.companies[cid].quarters[0].q}</span></th>`).join("")}</tr></thead>
+    <tbody>${metrics.map(([m,label])=>`<tr><td><b>${label}</b></td>${SC.order.map(cid=>{const r=gRow(SC.companies[cid],m);return `<td class="${SC.companies[cid].color}-col" style="text-align:right;font-weight:700">${r?fmt(r.a,r.u)+(r.est?'<span class="dt" style="color:#999">△</span>':''):'<span class="small-note">—</span>'}</td>`;}).join("")}</tr>`).join("")}</tbody></table>
+    ${[0,1,2].map(bi=>{const first=SC.companies[SC.order[0]].quarters[0].bottom[bi];if(!first)return "";
+      return `<div class="sc-qual"><div class="sc-qh" style="margin-top:10px">${first.k}</div>${SC.order.map(cid=>{const co=SC.companies[cid];const b=(co.quarters[0].bottom||[])[bi];return b?`<div class="sc-qline"><span class="${co.color}-col" style="font-weight:700">${co.name}</span> <span class="small-note">${b.v}</span></div>`:"";}).join("")}</div>`;}).join("")}
+    <p class="small-note" style="margin-top:6px">△ SK·삼성 GM은 미공시라 역산 추정 · 단위: SK/삼성=조·원, 마이크론=\$B</p></div></div>`;
+  H("scorecard", combined + SC.order.map(cid=>{
     const co=SC.companies[cid];
     const qs=co.quarters.map((qt,qi)=>{
       const rows=qt.rows.map(r=>`<tr class="${r.hl?"hl-row":""}">
