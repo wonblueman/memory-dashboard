@@ -132,6 +132,7 @@
   .sc-card table{margin-top:2px}
   .sc-qual{border-top:.5px solid #f0f0f0;padding-top:2px}
   .sc-qline{padding:3px 0;line-height:1.45}
+  .sc-brow td{border-top:.5px solid #eee;padding-top:8px}
 </style>
 </head>
 <body>
@@ -654,7 +655,7 @@ H("hanwha",T.hanwha_basis);
 sec("분기",()=>{
 /* ════ 분기 ════ */
 TX("qSub",`매분기 실적 후 갱신 · 다음: SK ${sched("sk_q2").d.slice(5).replace("-","/")} · 삼성 ${sched("ss_q2").d.slice(5).replace("-","/")} (일정은 schedule에서 자동)`);
-/* 3사 실적 스코어카드 — 항목축 통합표 (B: 실적+컨센+초과) */
+/* 3사 실적 스코어카드 — 항목축 통합표 (B: 실적+컨센+초과, OPM 자동계산, 정성항목 표 편입) */
 (function(){
   const SC=Q.scorecard; if(!SC)return;
   const fmt=(v,u)=>{ if(v==null)return"—";
@@ -663,20 +664,29 @@ TX("qSub",`매분기 실적 후 갱신 · 다음: SK ${sched("sk_q2").d.slice(5)
     if(u==="조")return (v<0?"−":"")+Math.abs(v)+"조"; return v; };
   const beat=(a,c)=>{ if(c==null||a==null)return""; const pt=(a/c-1)*100;
     return `<span class="${pt>=0?"up":"down"}" style="font-weight:700">${pt>=0?"+":""}${pt.toFixed(1)}%</span>`; };
-  const metrics=[["rev","매출"],["op","영업이익"],["net","순이익"],["eps","EPS"],["opm","영업이익률"],["gm","Gross Margin"]];
   const gRow=(co,m)=>co.quarters[0].rows.find(r=>r.m===m);
-  const cell=(co,m)=>{ const r=gRow(co,m); if(!r)return'<span class="small-note">—</span>';
-    const est=r.est?'<span class="dt" style="color:#999">△</span>':'';
-    let out=`<span class="${co.color}-col" style="font-weight:700">${fmt(r.a,r.u)}${est}</span>`;
+  // OPM 없으면 영업이익/매출로 자동 계산
+  const opmVal=(co)=>{ const o=gRow(co,"opm"); if(o)return{a:o.a,c:o.c,est:o.est};
+    const op=gRow(co,"op"),rev=gRow(co,"rev");
+    if(op&&rev&&rev.a)return{a:+(op.a/rev.a*100).toFixed(1),c:null,est:true,derived:true}; return null; };
+  const cell=(co,m)=>{
+    let r; if(m==="opm"){const v=opmVal(co); if(!v)return'<span class="small-note">—</span>';
+      r={a:v.a,c:v.c,u:"%",est:v.est,derived:v.derived};} else {r=gRow(co,m);}
+    if(!r)return'<span class="small-note">—</span>';
+    const mk=r.est?`<span class="dt" style="color:#999">${r.derived?"↩":"△"}</span>`:"";
+    let out=`<span class="${co.color}-col" style="font-weight:700">${fmt(r.a,r.u)}${mk}</span>`;
     if(r.c!=null)out+=`<br><span class="small-note">컨센 ${fmt(r.c,r.u)}</span> ${beat(r.a,r.c)}`;
     return out; };
+  const metrics=[["rev","매출"],["op","영업이익"],["net","순이익"],["eps","EPS"],["opm","영업이익률"],["gm","Gross Margin"]];
+  const bkeys=["가이던스","Capex","수주/LTA"];
   let h=`<div class="sc-card"><div class="sc-cardh">🔀 3사 실적 비교 <span class="small-note" style="font-weight:400">(최신 분기 · 실적/컨센/초과)</span></div><div style="padding:6px 10px 12px">`;
   h+=`<table><thead><tr><th>항목</th>${SC.order.map(cid=>`<th class="${SC.companies[cid].color}-col" style="text-align:right">${SC.companies[cid].name}<br><span class="small-note" style="font-weight:400">${SC.companies[cid].quarters[0].q}</span></th>`).join("")}</tr></thead><tbody>`;
+  // 숫자 항목
   h+=metrics.map(([m,label])=>`<tr><td><b>${label}</b></td>${SC.order.map(cid=>`<td style="text-align:right;vertical-align:top;line-height:1.5">${cell(SC.companies[cid],m)}</td>`).join("")}</tr>`).join("");
+  // 정성 항목(가이던스/Capex/수주LTA)을 표 행으로 편입 — 좌측 정렬 서술
+  h+=bkeys.map((bk,bi)=>`<tr class="sc-brow"><td style="vertical-align:top"><b>${bk}</b></td>${SC.order.map(cid=>{const b=(SC.companies[cid].quarters[0].bottom||[])[bi];return `<td class="small-note" style="text-align:left;vertical-align:top;line-height:1.4;padding-left:8px">${b?b.v:"—"}</td>`;}).join("")}</tr>`).join("");
   h+=`</tbody></table>`;
-  h+=[0,1,2].map(bi=>{const first=SC.companies[SC.order[0]].quarters[0].bottom[bi];if(!first)return"";
-    return `<div class="sc-qual"><div class="sc-qh" style="margin-top:10px">${first.k}</div>${SC.order.map(cid=>{const co=SC.companies[cid];const b=(co.quarters[0].bottom||[])[bi];return b?`<div class="sc-qline"><span class="${co.color}-col" style="font-weight:700">${co.name}</span> <span class="small-note">${b.v}</span></div>`:"";}).join("")}</div>`;}).join("");
-  h+=`<p class="small-note" style="margin-top:8px">△ SK·삼성 GM은 미공시(역산 추정) · 초과=실적/컨센−1 · 단위: SK/삼성=조·원, 마이크론=$B · 컨센 없는 칸은 실적만</p></div></div>`;
+  h+=`<p class="small-note" style="margin-top:8px">△ SK·삼성 GM 역산추정(미공시) · ↩ 마이크론 영업이익률=영업이익/매출 계산 · 초과=실적/컨센−1 · 단위: SK/삼성=조·원, 마이크론=$B</p></div></div>`;
   H("scorecard",h); TX("nScore",SC.note);
 })();
 H("tOpTrend",Q.op_trend.series.map(r=>`<tr class="${r.q==="2Q26"?"hl-row":""}">
