@@ -402,6 +402,7 @@
 <script src="data-2026-10-20.js"></script>
 <script src="data-2026-10-29.js"></script>
 <script src="data-2026-10-30.js"></script>
+<script src="data-2026-11-02.js"></script>
 <!-- <script src="data-2026-07-27.js"></script> -->
 
 <script>
@@ -515,7 +516,7 @@ function sec(name,fn){ try{ fn(); }catch(e){
 
 sec("한눈에",()=>{
 /* ════ 한눈에 ════ */
-TX("hlLabel",OV.headline.label); TX("hlTitle",OV.headline.title);
+H("hlLabel",OV.headline.label); H("hlTitle",OV.headline.title);
 H("hlBody",OV.headline.body.map((b,i)=>`${"①②③④⑤"[i]} ${b}`).join("<br><br>"));
 H("statusNote","<b>ℹ️ 데이터 상태:</b> "+OV.status_note);
 
