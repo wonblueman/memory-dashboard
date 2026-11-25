@@ -403,6 +403,10 @@
 <script src="data-2026-10-29.js"></script>
 <script src="data-2026-10-30.js"></script>
 <script src="data-2026-11-02.js"></script>
+<script src="data-2026-11-10.js"></script>
+<script src="data-2026-11-11.js"></script>
+<script src="data-2026-11-23.js"></script>
+<script src="data-2026-11-25.js"></script>
 <!-- <script src="data-2026-07-27.js"></script> -->
 
 <script>
@@ -488,7 +492,7 @@ const gap=id=>{const c=PR[id].consensus,b=last(id);return(c&&b)?(b.v-c.v)/c.v*10
 const pctCell=p=>p===null?'<span class="flat">—</span>':
   `<span class="${p>0?"gap-pos":p<0?"gap-neg":"flat"}">${p>0?"▲":p<0?"▼":"—"} ${Math.abs(p).toFixed(2)}%</span>`;
 const lastClose=k=>[...EQ[k].daily].reverse().find(d=>d.close!==null);
-const H=(id,h)=>document.getElementById(id).innerHTML=h;
+const H=(id,h)=>document.getElementById(id).innerHTML=(h??"");
 const TX=(id,t)=>document.getElementById(id).textContent=t;
 const sched=id=>S.schedule.find(x=>x.id===id);
 
@@ -555,7 +559,7 @@ H("tSched",S.schedule.filter(s=>dday(s.d)>=0).slice(0,5).map(s=>{
 
 sec("주간",()=>{
 /* ════ 주간 ════ */
-TX("wTtl","📅 "+S.meta.label); TX("wNote",S.meta.note);
+TX("wTtl","📅 "+S.meta.label); H("wNote",S.meta.note);
 H("tModule",["rdimm_32gb","udimm5_16gb","udimm4_16gb","mobile_8gb"].map((id,i)=>{
   const p=PR[id],a=prev(id),b=last(id),g=gap(id);
   return`<tr class="${i===0?"hl-row":""}"><td>${P[id].label} ${pBadge(id)}</td>
@@ -563,7 +567,7 @@ H("tModule",["rdimm_32gb","udimm5_16gb","udimm4_16gb","mobile_8gb"].map((id,i)=>
     <td class="this-week">${b?usd(b.v)+`<br><span class="dt">${md(b.d)}</span>`:"—"}</td>
     <td class="consensus">${p.consensus?usd(p.consensus.v):"—"}</td>
     <td>${g===null?"—":`<span class="${g>0?"gap-pos":"gap-neg"}">${g>0?"+":""}${g.toFixed(1)}%</span>`}</td></tr>`}).join(""));
-TX("nModule",S.notes.dram_module);
+H("nModule",S.notes.dram_module);
 
 H("tNand",[{cat:"Wafer Spot (웨이퍼)"},"nand_tlc_512gb","nand_tlc_256gb","nand_tlc_128gb",
   {cat:"Flash Spot (칩)"},"nand_mlc_64gb",{cat:"계약가"},"nand_128gb_ct","nand_qlc_1tb"].map(r=>{
@@ -573,7 +577,7 @@ H("tNand",[{cat:"Wafer Spot (웨이퍼)"},"nand_tlc_512gb","nand_tlc_256gb","nan
     <td class="this-week">${b?usd(b.v):'<span style="color:#888">—</span>'}</td>
     <td>${pctCell(wow(r))}${p.tag?` <span class="dt">${p.tag}</span>`:""}</td>
     <td class="small-note">${b?md(b.d)+" · ":""}${p.note||p.src}</td></tr>`}).join(""));
-TX("nNand",S.notes.nand);
+H("nNand",S.notes.nand);
 
 H("tSpot",["ddr5_16gb","ddr4_16gb","ddr4_8gb","ddr3_4gb",{cat:"모듈"},"rdimm_32gb","udimm5_16gb",
   "udimm4_16gb",{cat:"NAND 웨이퍼"},"nand_tlc_512gb"].map(r=>{
@@ -584,7 +588,7 @@ H("tSpot",["ddr5_16gb","ddr4_16gb","ddr4_8gb","ddr3_4gb",{cat:"모듈"},"rdimm_3
     <td class="last-week">${a?usd(a.v)+` <span class="dt">(${md(a.d)})</span>`:"—"}</td>
     <td class="this-week">${b?usd(b.v)+` <span class="dt">(${md(b.d)})</span>`+live:"—"}</td>
     <td>${PR[r].stale?'<span class="flat">—</span>':pctCell(wow(r))}</td></tr>`}).join(""));
-TX("nSpot",S.notes.spot_trend); TX("nNandChart",S.notes.nand_chart);
+H("nSpot",S.notes.spot_trend); H("nNandChart",S.notes.nand_chart);
 
 const dates=[...new Set(Object.values(EQ).flatMap(e=>e.daily.map(d=>d.d)))].sort();
 function eqCell(k,d){const r=EQ[k].daily.find(x=>x.d===d);
@@ -610,7 +614,7 @@ H("tExport",M.exports.series.map(r=>
    <td class="up">+${r.yoy}% ${r.tag||""}</td></tr>`).join("")
   +`<tr class="total-row"><td>상반기 누적</td><td>$${M.exports.h1_total.v}억</td>
     <td class="up">+${M.exports.h1_total.yoy}% · ${M.exports.h1_total.note}</td></tr>`);
-TX("nExport",M.exports.note);
+H("nExport",M.exports.note);
 /* 월 진행분 (10일·20일 잠정) — 월 환산치는 만들지 않는다 */
 const PX=M.exports.partial;
 H("partialWrap",!PX?"":`
@@ -643,7 +647,7 @@ if(M.exports_by_item){
   H("byItemAspHead","<tr><th>품목 ($/kg)</th>"+MS.map(m=>`<th>${mo(m)}</th>`).join("")+"</tr>");
   H("tByItemAsp",GO.map(g=>`<tr${g==="SSD"?' class="hl-row"':""}><td><b>${g}</b></td>`+
     BI.asp.series.map(r=>`<td class="small-note">${(r[g]||0).toLocaleString()}</td>`).join("")+"</tr>").join(""));
-  TX("nByItem",`${BI.src} · ${BI.asp.note}`);
+  H("nByItem",`${BI.src} · ${BI.asp.note}`);
 }
 
 H("consUpdates",C.updates);
@@ -660,7 +664,7 @@ H("consNote",C.note);
 
 const tgtRow=r=>`<tr class="${r.cur?"hl-row":""}"><td>${r.t}</td>
   <td>${r.avg??'<span class="flat">—</span>'}${r.avg?"만":""}</td>
-  <td>${r.max??'<span class="flat">상충</span>'}${r.max?"만":""}</td>
+  <td>${r.max??'<span class="flat">—</span>'}${r.max?"만":""}</td>
   <td class="small-note">${r.note||""}</td></tr>`;
 H("tTgtSk",T.sk.series.map(tgtRow).join(""));
 H("tTgtSs",T.samsung.series.map(tgtRow).join(""));
@@ -671,7 +675,8 @@ H("hanwha",T.hanwha_basis);
 
 sec("분기",()=>{
 /* ════ 분기 ════ */
-TX("qSub",`매분기 실적 후 갱신 · 다음: SK ${sched("sk_q2").d.slice(5).replace("-","/")} · 삼성 ${sched("ss_q2").d.slice(5).replace("-","/")} (일정은 schedule에서 자동)`);
+{const nx=id=>{try{return sched(id)}catch(e){return null}};const sk=nx("sk_next")||sched("sk_q2"),ss=nx("ss_next")||sched("ss_q2");
+TX("qSub",`매분기 실적 후 갱신 · 다음: SK ${sk.d.slice(5).replace("-","/")} · 삼성 ${ss.d.slice(5).replace("-","/")} (일정은 schedule에서 자동)`);}
 /* 3사 실적 스코어카드 — 항목축 통합표 (B: 실적+컨센+초과, OPM 자동계산, 정성항목 표 편입) */
 (function(){
   const SC=Q.scorecard; if(!SC)return;
@@ -704,7 +709,7 @@ TX("qSub",`매분기 실적 후 갱신 · 다음: SK ${sched("sk_q2").d.slice(5)
   h+=bkeys.map((bk,bi)=>`<tr class="sc-brow"><td style="vertical-align:top"><b>${bk}</b></td>${SC.order.map(cid=>{const b=(SC.companies[cid].quarters[0].bottom||[])[bi];return `<td class="small-note" style="text-align:left;vertical-align:top;line-height:1.4;padding-left:8px">${b?b.v:"—"}</td>`;}).join("")}</tr>`).join("");
   h+=`</tbody></table>`;
   h+=`<p class="small-note" style="margin-top:8px">△ SK·삼성 GM 역산추정(미공시) · ↩ 마이크론 영업이익률=영업이익/매출 계산 · 초과=실적/컨센−1 · 단위: SK/삼성=조·원, 마이크론=$B</p></div></div>`;
-  H("scorecard",h); TX("nScore",SC.note);
+  H("scorecard",h); H("nScore",SC.note);
 })();
 H("tOpTrend",Q.op_trend.series.map(r=>`<tr class="${r.q==="2Q26"?"hl-row":""}">
   <td>${r.q} ${r.sk_cls==="measured"&&r.ss_cls==="measured"?BADGE.measured:BADGE.estimated}</td>
@@ -724,23 +729,23 @@ H("tAiSnap",AI.snapshot.map(r=>`<tr class="${r.hl?"hl-row":""}">
 H("tAiTrend",AI.trend.map(r=>`<tr class="${r.hl?"hl-row":""}"><td>${r.t}</td>
   <td>${r.gpt_wau}</td><td>${r.gem_mau}</td><td class="mu-col">$${r.openai_arr}B</td>
   <td class="sk-col">$${r.anthropic_arr}B</td><td>${r.tok}</td></tr>`).join(""));
-H("nArr",AI.arr_note); TX("nToken",AI.tokens.note); TX("nRet",AI.ret_note);
-H("aiLink",AI.link); TX("aiSrc",AI.src_policy);
+H("nArr",AI.arr_note); H("nToken",AI.tokens.note); H("nRet",AI.ret_note);
+H("aiLink",AI.link); H("aiSrc",AI.src_policy);
 
 H("thCapex","<th>회사</th>"+MC.capex_guide.cols.map(c=>`<th>${c}</th>`).join(""));
 H("tCapex",MC.capex_guide.rows.map(r=>`<tr><td>${r.co}</td>
   ${r.v.map(v=>`<td>$${v}B</td>`).join("")}</tr>`).join("")
   +`<tr class="total-row"><td>합계</td>${MC.capex_guide.cols.map((_,i)=>
     `<td>$${MC.capex_guide.rows.reduce((s,r)=>s+r.v[i],0)}B</td>`).join("")}</tr>`);
-TX("nCapex",MC.capex_guide.src+" · 합계는 자동 계산");
+H("nCapex",MC.capex_guide.src+" · 합계는 자동 계산");
 H("tCapexA",MC.capex_actual.rows.map(r=>`<tr><td>${r.co}</td><td>${r.g}</td><td>${r.a}</td>
   <td class="up">${r.x}</td><td>${r.q1}</td></tr>`).join(""));
 H("nCapexA",MC.capex_actual.note);
 H("tDebt",MC.debt.rows.map(r=>`<tr class="${r.hl?"hl-row":""}"><td>${r.co}</td>
   ${r.v.map(v=>`<td>${v.toFixed(2)}</td>`).join("")}
   <td class="${r.d.includes("개선")?"down":r.d.includes("횡보")?"flat":"up"}">${r.d}</td></tr>`).join(""));
-TX("nDebt",MC.debt.note);
-TX("covSub",MC.coverage.sub);
+H("nDebt",MC.debt.note);
+H("covSub",MC.coverage.sub);
 H("tCov",MC.coverage.rows.map(r=>`<tr class="${r.hl?"hl-row":""}"><td>${r.co}</td>
   <td>$${r.capex}B</td>
   <td class="${r.fcf<0?"down":"up"}">${r.fcf>0?"+":""}$${r.fcf}B</td>
@@ -752,16 +757,16 @@ H("tCycle",MC.cycles.rows.map(r=>`<tr class="${r.hl?"hl-row":""}"><td>${r.c}</td
   <td>${r.cap}</td><td>${r.per}</td></tr>`).join(""));
 H("tPer",MC.fwd_per.rows.map(r=>`<tr class="${r.hl?"hl-row":""}"><td>${r.t}</td>
   <td class="ss-col">${r.ss}</td><td class="sk-col">${r.sk}</td><td>${r.mu}</td></tr>`).join(""));
-TX("nPer",MC.fwd_per.note);
+H("nPer",MC.fwd_per.note);
 H("tCapexPlan",MC.capex_plan.rows.map(r=>`<tr><td>${r.co}</td>
   <td class="${r.key}-col">${r.y26}</td><td>${r.y27}</td><td class="small-note">${r.n}</td></tr>`).join(""));
-TX("nCapexPlan",MC.capex_plan.note);
+H("nCapexPlan",MC.capex_plan.note);
 
 });
 
 sec("수시·이벤트",()=>{
 /* ════ 수시·이벤트 ════ */
-TX("fSub",FU.bigtech.sub);
+H("fSub",FU.bigtech.sub);
 H("tFund",FU.bigtech.rows.map(r=>`<tr class="${r.hl?"hl-row":""}"><td>${r.co}</td>
   <td>${r.eq}</td><td>${r.bond}</td><td>${r.spv}</td><td class="small-note">${r.n}</td></tr>`).join("")
   +`<tr class="total-row"><td>합계</td><td>${FU.bigtech.totals.eq}</td><td>${FU.bigtech.totals.bond}</td>
@@ -772,13 +777,13 @@ H("spvNote",FU.bigtech.spv_note);
 H("tMem3",FU.memory3.rows.map(r=>`<tr class="${r.hl?"hl-row":""}">
   <td>${r.co} <span class="badge ${r.tag==="증자"?"badge-fin":"badge-rev"}">${r.tag}</span></td>
   <td>${r.how}</td><td class="${r.key}-col">${r.amt}</td><td class="small-note">${r.n}</td></tr>`).join(""));
-TX("adrTitle",FU.sk_adr.title);
+H("adrTitle",FU.sk_adr.title);
 H("adrTl",FU.sk_adr.timeline.map(t=>`<div class="tl-item fin">
   <span class="tl-date">${t.d}</span> · <span class="who">${t.who}</span> ${t.t}</div>`).join(""));
 H("adrNote",FU.sk_adr.note);
 H("mem3Note",FU.memory3.note);
 
-TX("ltaSub",LT.sub);
+H("ltaSub",LT.sub);
 H("ltaTl",LT.timeline.map(t=>`<div class="tl-item rev">
   <span class="tl-date">${t.d}</span> · <span class="who">${t.who}</span> ${t.t}</div>`).join(""));
 H("tLta",LT.rows.map(r=>`<tr class="hl-row"><td>${r.co}</td><td>${r.deal}</td><td>${r.term}</td>
@@ -1027,7 +1032,7 @@ CH.monthly=()=>{
 
   // 10일 기간별 · 월별 비교 (그룹 막대: x=기간, 시리즈=월)
   if(M.exports.period_compare && $("periodChart")){
-    const PC=M.exports.period_compare, MC={"2026-06":"#C9CDD2","2026-07":"#9AA0A6","2026-08":"#534AB7","2026-09":"#C73E2C"};
+    const PC=M.exports.period_compare, MC={"2026-06":"#C9CDD2","2026-07":"#9AA0A6","2026-08":"#534AB7","2026-09":"#C73E2C","2026-10":"#1D9E75","2026-11":"#C77B1F"};
     new Chart($("periodChart"),{type:"bar",
       options:{...base_opt(v=>"$"+v+"억"),
         plugins:{legend:{position:"bottom",labels:{font:{size:10},boxWidth:12}},
